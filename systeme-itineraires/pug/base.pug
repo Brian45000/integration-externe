@@ -1,0 +1,44 @@
+
+// views/index.pug
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Page d'Accueil
+    link(rel="stylesheet", href="/styles.css")
+
+  body
+    nav.navbar
+         p(id="auth")
+        | Connectez-vous pour accéder à plus de fonctionnalités.
+
+      div.navbar-container
+        a(href="#") Logo
+
+        ul.navbar-menu
+          li.navbar-item
+            a(href="#") Accueil
+          li.navbar-item
+            a(href="#") À Propos
+          li.navbar-item
+            a(href="#") Services
+          li.navbar-item
+            a(href="#") Contact
+
+    div.content
+      h1 Bienvenue sur notre site web !
+
+      p
+        | Ceci est une page d'accueil simple avec une barre de navigation.
+        | Vous pouvez ajouter plus de contenu ici.
+
+      p
+        a(href="#") En savoir plus
+        
+    div
+        block content
+        
+
+script 
+        include ../scripts/login.js 
