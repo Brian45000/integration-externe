@@ -1,69 +1,25 @@
-<!DOCTYPE html>
-<html lang="fr">
+<form action="/login" method="post" class="needs-validation" novalidate>
+    <div class="mb-3">
+        <label for="identifiant" class="form-label">Identifiant :</label>
+        <input type="text" class="form-control" id="identifiant" name="identifiant" required>
+        <div class="invalid-feedback">
+            Veuillez saisir votre identifiant.
+        </div>
+    </div>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulaire de Connexion</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+    <div class="mb-3">
+        <label for="motdepasse" class="form-label">Mot de passe :</label>
+        <input type="password" class="form-control" id="motdepasse" name="motdepasse" required>
+        <div class="invalid-feedback">
+            Veuillez saisir votre mot de passe.
+        </div>
+    </div>
 
-        form {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        input {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 16px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        button {
-            background-color: #4caf50;
-            color: #fff;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
-</head>
-
-<body>
-    <form action="/login" method="post">
-        <label for="identifiant">Identifiant :</label>
-        <input type="identifiant" id="identifiant" name="identifiant" required>
-
-        <label for="motdepasse">Mot de passe :</label>
-        <input type="password" id="motdepasse" name="motdepasse" required>
-
-        <button type="submit">Se Connecter</button>
-    </form>
-</body>
-
-</html>
+    <button type="submit" class="btn btn-success">
+        <i class="fas fa-sign-in-alt"></i> Se Connecter
+    </button>
+    <br>
+    <a href="/register" class="btn btn-primary mt-1">
+        <i class="fas fa-user-plus"></i> S'inscrire
+    </a>
+</form>

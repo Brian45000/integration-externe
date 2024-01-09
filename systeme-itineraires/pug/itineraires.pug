@@ -1,0 +1,24 @@
+extends base.pug
+
+block content
+    h5.card-title Mes itinéraires :
+    each route in routes
+                .mb-3
+                  h6 #{route.name}
+
+                  ul.list-group
+                    li.list-group-item Points:
+                      ul.list-group
+                        each point in route.points
+                          li.list-group-item #{point.latitude}, #{point.longitude}
+
+                    li.list-group-item Distance: #{route.distance} km
+
+                    li.list-group-item
+                      button.btn.btn-primary.mr-2(type='button')
+                        i.fas.fa-search
+                        | Visualiser
+
+                      button.btn.btn-success(type='button')
+                        i.fas.fa-download
+                        | Télécharger

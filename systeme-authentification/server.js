@@ -36,17 +36,12 @@ app.set("views", "pug");
 
 // J'importe body-parser
 const bodyParser = require("body-parser");
-// app.use permet d'ajouter des fonctionnalités à express
-// En fait, ce sont des modules express (parce qu'express a aussi
-// des modules, comme express est un module de Node)
 app.use(
   bodyParser.urlencoded({
     extended: true,
   })
 );
-// Une fois qu'on a configuré bodyParser, toutes les variables "req"
-// dans les app.get, app.post etc, possèderont la propriété "body"
-// avec directement les champs des formulaires.
+app.use(bodyParser.json());
 
 // Ce qu'il se passe en GET sur '/'
 app.get("/", (req, res) => {
@@ -59,8 +54,12 @@ app.get("/register", (req, res) => {
   const contenuDuFichier = fs.readFileSync(cheminDuFichier, {
     encoding: "utf-8",
   });
-  res.appendHeader("Content-Type", "text/html");
-  res.send(contenuDuFichier);
+  res.json({
+    status: "Succès",
+    message: "Formulaire envoyé",
+    redirect: "/login",
+    form: contenuDuFichier,
+  });
 });
 
 app.post("/register", async (req, res) => {
@@ -69,7 +68,7 @@ app.post("/register", async (req, res) => {
 
   // Vérification des données
   if (!identifiant || !motdepasse) {
-    return res.send({
+    return res.json({
       status: "Erreur",
       message: "JSON Incorrect",
       redirect: "/register",
@@ -79,7 +78,7 @@ app.post("/register", async (req, res) => {
   // Hash du mot de passe de l'utilisateur
   bcrypt.hash(motdepasse, 10, function (err, hash) {
     if (err) {
-      return res.send({
+      return res.json({
         status: "Erreur",
         message: "Erreur lors du hachage du mot de passe",
         redirect: "/register",
@@ -106,7 +105,7 @@ app.post("/register", async (req, res) => {
       (err, results, fields) => {
         if (err) {
           connection.end();
-          return res.send({
+          return res.json({
             status: "Erreur",
             message: "Erreur lors de la vérification de l'utilisateur",
             redirect: "/register",
@@ -120,13 +119,13 @@ app.post("/register", async (req, res) => {
             (err, results, fields) => {
               connection.end();
               if (err) {
-                return res.send({
+                return res.json({
                   status: "Erreur",
                   message: "Erreur lors de l'insertion de l'utilisateur",
                   redirect: "/register",
                 });
               }
-              res.send({
+              res.json({
                 status: "Success",
                 message: "Inscription réussie ! ",
                 redirect: "/login",
@@ -135,7 +134,7 @@ app.post("/register", async (req, res) => {
           );
         } else {
           connection.end();
-          res.send({
+          res.json({
             status: "Erreur",
             message: "Compte déjà existant",
             redirect: "/register",
@@ -150,7 +149,7 @@ app.post("/register", async (req, res) => {
 app.get("/login", (req, res) => {
   try {
     const cheminDuFichier = path.join(__dirname, "views", "login.html");
-    const contenuDuFichier = fs.readFile(cheminDuFichier, "utf-8");
+    const contenuDuFichier = fs.readFileSync(cheminDuFichier, "utf-8");
 
     res.json({
       status: "Succès",
@@ -168,8 +167,12 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
+  console.log("LOGIN");
+  console.log("req body", req.body);
   let identifiant = req.body.identifiant;
   let motdepasse = req.body.motdepasse;
+
+  console.log("identifiant:", identifiant);
 
   // Création de la connexion à la base de données
   const connection = mysql.createConnection({
@@ -184,17 +187,39 @@ app.post("/login", async (req, res) => {
       if (results && results.length === 1) {
         let isPasswordValid = bcrypt.compare(motdepasse, results[0].motdepasse);
         if (isPasswordValid) {
-          res.send(
-            JSON.stringify({
+          // Création du JWT et ajout en BDD
+          var TokenJWTUtilisateur = jwt.sign(
+            {
+              iss: "http://localhost",
+              ID_user: results[0]["id"],
               identifiant: identifiant,
-              motdepasse: motdepasse,
-              status: "Succès",
-              message: "Connexion réussie",
-              redirect: "/",
-            })
+            },
+            process.env.SECRET_KEY_JWT
           );
+
+          const SQLquery = `INSERT INTO users_jwt (jwt, id_user) VALUES ('${TokenJWTUtilisateur}', '${results[0]["id"]}')`;
+
+          connection.query(SQLquery, (err, results, fields) => {
+            if (!err) {
+              console.error(
+                "Insertion du JWT pour l'utilisateur :",
+                identifiant
+              );
+            } else {
+              console.error("Erreur lors de l'insertion du JWT :", err);
+            }
+          });
+          connection.end();
+
+          res.json({
+            identifiant: identifiant,
+            JWT: TokenJWTUtilisateur,
+            status: "Succès",
+            message: "Connexion réussie",
+            redirect: "/dashboard",
+          });
         } else {
-          res.send({
+          res.json({
             status: "Erreur",
             message: "Identifiants ou Mot de passe incorrects",
             redirect: "/login",
@@ -202,7 +227,7 @@ app.post("/login", async (req, res) => {
         }
       } else {
         connection.end();
-        res.send({
+        res.json({
           status: "Erreur",
           message: "Identifiants incorrects",
           redirect: "/login",
@@ -244,7 +269,7 @@ app.get("/logout", (req, res) => {
     (err, results, fields) => {
       if (err) {
         connection.end();
-        return res.send({
+        return res.json({
           status: "Erreur",
           message: "Erreur lors de la vérification du JWT",
           redirect: "/register",
@@ -258,13 +283,13 @@ app.get("/logout", (req, res) => {
           (err, results, fields) => {
             connection.end();
             if (err) {
-              return res.send({
+              return res.json({
                 status: "Erreur",
                 message: "Erreur lors de la suppression du JWT",
                 redirect: "/",
               });
             }
-            res.send({
+            res.json({
               status: "Succès",
               message: "Vous venez de vous déconnecter",
               redirect: "/login",
@@ -273,7 +298,7 @@ app.get("/logout", (req, res) => {
         );
       } else {
         connection.end();
-        res.send({
+        res.json({
           status: "Erreur",
           message: "Jeton inconnu",
           redirect: "/",
@@ -301,7 +326,7 @@ app.post("/verify", (req, res) => {
     (err, results, fields) => {
       if (err) {
         connection.end();
-        return res.send({
+        return res.json({
           status: "Erreur",
           message: "Erreur lors de la vérification du JWT",
           redirect: "/",
@@ -312,7 +337,7 @@ app.post("/verify", (req, res) => {
         let identifiantJWT;
         // Vérifier le JWT et récupérer l'identifiant
 
-        res.send({
+        res.json({
           status: "Succès",
           message: "JWT Vérifié",
           utilisateur: {
@@ -322,7 +347,7 @@ app.post("/verify", (req, res) => {
         });
       } else {
         connection.end();
-        res.send({
+        res.json({
           status: "Erreur",
           message: "Jeton inconnu",
           redirect: "/",

@@ -1,44 +1,38 @@
-
-// views/index.pug
 doctype html
-html(lang="en")
+html(lang="fr")
   head
     meta(charset="UTF-8")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
-    title Page d'Accueil
-    link(rel="stylesheet", href="/styles.css")
+    title Intégration Externe
+    link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css", integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN", crossorigin="anonymous")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css", crossorigin="anonymous")
 
-  body
-    nav.navbar
-         p(id="auth")
-        | Connectez-vous pour accéder à plus de fonctionnalités.
+  body.bg-light.d-flex.justify-content-center.align-items-center.vh-100
+    nav.navbar.navbar-expand-lg.navbar-dark.bg-dark.fixed-top
+      .container-fluid
+        a.navbar-brand(href='#') Intégration Externe
 
-      div.navbar-container
-        a(href="#") Logo
+        button.navbar-toggler(type='button', data-bs-toggle='collapse', data-bs-target='#navbarNav', aria-controls='navbarNav', aria-expanded='false', aria-label='Toggle navigation')
+          span.navbar-toggler-icon
 
-        ul.navbar-menu
-          li.navbar-item
-            a(href="#") Accueil
-          li.navbar-item
-            a(href="#") À Propos
-          li.navbar-item
-            a(href="#") Services
-          li.navbar-item
-            a(href="#") Contact
+        .collapse.navbar-collapse#navbarNav
+          ul.navbar-nav.ms-auto
+            li.nav-item
+              a.nav-link(href='#') Mes itinéraires
 
-    div.content
-      h1 Bienvenue sur notre site web !
+            li.nav-item
+              a.nav-link(href='#') Mon Profil
 
-      p
-        | Ceci est une page d'accueil simple avec une barre de navigation.
-        | Vous pouvez ajouter plus de contenu ici.
+            li.nav-item
+              a.nav-link(href='#') Déconnecter
 
-      p
-        a(href="#") En savoir plus
-        
-    div
-        block content
-        
-
+    .container
+      div.col3
+      .card.col6
+        div.card-body.text-center.p-4
+         block content
+    
+script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js", integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+", crossorigin="anonymous")
+script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js", integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL", crossorigin="anonymous") 
 script 
-        include ../scripts/login.js 
+  include ../scripts/login.js 

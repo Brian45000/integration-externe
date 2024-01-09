@@ -2,32 +2,94 @@ const mysql = require("mysql");
 const express = require("express");
 const app = express();
 const axios = require("axios");
-//Je dis à express qu'on utilisera pug comme moteur de template
-// pour les pages web
+const cookieParser = require("cookie-parser");
+
 app.set("view engine", "pug");
-// Je dis à express que toutes les pages pug sont dans le dossier "pug"
 app.set("views", "pug");
 
-// J'importe body-parser
 const bodyParser = require("body-parser");
-// app.use permet d'ajouter des fonctionnalités à express
-// En fait, ce sont des modules express (parce qu'express a aussi
-// des modules, comme express est un module de Node)
 app.use(
   bodyParser.urlencoded({
     extended: true,
   })
 );
+app.use(bodyParser.json());
+app.use(cookieParser());
+
+/************************************** LOGIN ***************************************************/
 
 app.get("/login", async (req, res) => {
-  await axios
-    .get("http://localhost:4000/login")
-    .then((res) => console.log(res.data));
-
-  res.render("login", {
-    formData: res.data,
-  });
+  await axios.get("http://localhost:4000/login").then((resGet) =>
+    res.render("login", {
+      formData: resGet.data.form,
+    })
+  );
 });
+
+app.post("/login", async (req, res) => {
+  await axios
+    .post(
+      "http://localhost:4000/login",
+      {
+        identifiant: req.body.identifiant,
+        motdepasse: req.body.motdepasse,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+    .then((resPost) => {
+      res.cookie("cookies", {
+        identifiant: resPost.data.identifiant,
+        JWT: resPost.data.JWT,
+      });
+      res.redirect(resPost.data.redirect);
+      //  console.log("mon cookie", req.cookies);
+    });
+});
+
+/************************************** REGISTER ***************************************************/
+
+app.get("/register", async (req, res) => {
+  await axios.get("http://localhost:4000/register").then((resGet) =>
+    res.render("register", {
+      formData: resGet.data.form,
+    })
+  );
+});
+
+app.post("/register", async (req, res) => {
+  await axios
+    .post(
+      "http://localhost:4000/register",
+      {
+        identifiant: req.body.identifiant,
+        motdepasse: req.body.motdepasse,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+    .then((resPost) => {
+      res.redirect(resPost.data.redirect);
+    });
+});
+
+/************************************** DASHBOARD ***************************************************/
+
+app.get("/dashboard", async (req, res) => {
+  // Récupération des itinéraires de l'utilisateur
+  // Envoie des itinéraires dans le template
+  res.render("itineraires");
+});
+
+/************************************** ITINERARY ***************************************************/
+app.post("/itinerary", async (req, res) => {});
+app.get("/itinerary", async (req, res) => {});
 
 // On écoute sur le port 3000
 app.listen(3000, () => {
