@@ -2,8 +2,16 @@ extends base.pug
 
 block content
   h5.card-header Mes itinéraires :
+    .d-flex.justify-content-end
+      a.btn.btn-primary.m-2(href='#')
+        i.fas.fa-plus
+        |  Nouvel itinéraire
 
-  table.table.table-bordered.table-responsive
+      a.btn.btn-warning(href='./occupation')
+        i.fas.fa-map
+        |  Carte d'occupation
+
+  table.table.table-bordered.table-responsive.mt-1
     thead.table-dark
       tr
         th Nom de l'itinéraire
@@ -22,7 +30,7 @@ block content
                 li.list-group-item #{point.latitude}, #{point.longitude}
           td.mb-1 Distance: #{route.distance} km
           td
-            button.btn.btn-primary.mr-2(type='button')
+            button.btn.btn-primary.m-2(type='button')
               i.fas.fa-search
               | 
 

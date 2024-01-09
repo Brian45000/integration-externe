@@ -15,6 +15,7 @@ app.use(
 );
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.use(express.static("public"));
 
 /************************************** LOGIN ***************************************************/
 
@@ -196,7 +197,30 @@ app.post("/update/:userID", async (req, res) => {
       res.redirect(resPatch.data.redirect);
     });
 });
+/************************************** MAP ***************************************************/
+app.get("/occupation", async (req, res) => {
+  try {
+    const [responseStations, responseStatus] = await Promise.all([
+      axios.get(
+        "https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_information.json"
+      ),
+      axios.get(
+        "https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_status.json"
+      ),
+    ]);
 
+    const dataStations = responseStations.data.data.stations;
+    const dataStationStatus = responseStatus.data.data.stations;
+
+    res.render("occupation", {
+      dataStations: JSON.stringify(dataStations), // Convertir en chaîne JSON
+      dataStationStatus: JSON.stringify(dataStationStatus), // Convertir en chaîne JSON
+    });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
 // On écoute sur le port 3000
 app.listen(3000, () => {
   console.log("Listening on 3000");
