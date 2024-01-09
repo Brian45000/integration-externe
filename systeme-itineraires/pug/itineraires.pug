@@ -1,24 +1,31 @@
 extends base.pug
 
 block content
-    h5.card-title Mes itinéraires :
-    each route in routes
-                .mb-3
-                  h6 #{route.name}
+  h5.card-header Mes itinéraires :
 
-                  ul.list-group
-                    li.list-group-item Points:
-                      ul.list-group
-                        each point in route.points
-                          li.list-group-item #{point.latitude}, #{point.longitude}
+  table.table.table-bordered.table-responsive
+    thead.table-dark
+      tr
+        th Nom de l'itinéraire
+        th Liste des points
+        th Distance
+        th Actions
 
-                    li.list-group-item Distance: #{route.distance} km
+    tbody
+      each route in routes
+        tr
+          td 
+            h6.mb-3 #{route.name}
+          td
+            ul.list-group
+              each point in route.points
+                li.list-group-item #{point.latitude}, #{point.longitude}
+          td.mb-1 Distance: #{route.distance} km
+          td
+            button.btn.btn-primary.mr-2(type='button')
+              i.fas.fa-search
+              | 
 
-                    li.list-group-item
-                      button.btn.btn-primary.mr-2(type='button')
-                        i.fas.fa-search
-                        | Visualiser
-
-                      button.btn.btn-success(type='button')
-                        i.fas.fa-download
-                        | Télécharger
+            button.btn.btn-success(type='button')
+              i.fas.fa-download
+              | 

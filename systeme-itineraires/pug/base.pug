@@ -17,14 +17,15 @@ html(lang="fr")
 
         .collapse.navbar-collapse#navbarNav
           ul.navbar-nav.ms-auto
-            li.nav-item
-              a.nav-link(href='#') Mes itinéraires
+            if estConnecte
+              li.nav-item
+                a.nav-link(href='/dashboard') Mes itinéraires
 
-            li.nav-item
-              a.nav-link(href='#') Mon Profil
+              li.nav-item
+                a.nav-link(href='/profil') Mon Profil
 
-            li.nav-item
-              a.nav-link(href='#') Déconnecter
+              li.nav-item
+                a.nav-link(href='/logout') Déconnecter
 
     .container
       div.col3

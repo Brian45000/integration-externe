@@ -49,6 +49,7 @@ app.get("/", (req, res) => {
 });
 
 /***************************************************************  REGISTER  **************************************************************/
+
 app.get("/register", (req, res) => {
   const cheminDuFichier = path.join(__dirname, "views", "register.html");
   const contenuDuFichier = fs.readFileSync(cheminDuFichier, {
@@ -167,8 +168,6 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
-  console.log("LOGIN");
-  console.log("req body", req.body);
   let identifiant = req.body.identifiant;
   let motdepasse = req.body.motdepasse;
 
@@ -242,14 +241,6 @@ app.post("/login", async (req, res) => {
 app.get("/logout", (req, res) => {
   let jeton = req.query.jeton;
 
-  //TODO Verifier le JSON
-
-  /*res.send({
-    status: "Erreur",
-    message: "JSON Incorrect",
-    redirect: "/",
-  });*/
-
   // Création de la connexion à la base de données
   const connection = mysql.createConnection({
     host: process.env.HOST_MYSQL,
@@ -257,10 +248,6 @@ app.get("/logout", (req, res) => {
     password: process.env.PASSWORD_MYSQL,
     database: process.env.DATABASE_MYSQL,
   });
-
-  const nouvelleLigne = {
-    jwt: jeton,
-  };
 
   // On vérifie si le JWT existe déjà ou non
   // si il existe on le supprime
@@ -272,7 +259,7 @@ app.get("/logout", (req, res) => {
         return res.json({
           status: "Erreur",
           message: "Erreur lors de la vérification du JWT",
-          redirect: "/register",
+          redirect: "/dashboard",
         });
       }
 
@@ -286,7 +273,7 @@ app.get("/logout", (req, res) => {
               return res.json({
                 status: "Erreur",
                 message: "Erreur lors de la suppression du JWT",
-                redirect: "/",
+                redirect: "/dashboard",
               });
             }
             res.json({
@@ -301,7 +288,7 @@ app.get("/logout", (req, res) => {
         res.json({
           status: "Erreur",
           message: "Jeton inconnu",
-          redirect: "/",
+          redirect: "/dashboard",
         });
       }
     }
@@ -312,6 +299,7 @@ app.get("/logout", (req, res) => {
 
 app.post("/verify", (req, res) => {
   const jeton = req.body.jeton;
+
   // Création de la connexion à la base de données
   const connection = mysql.createConnection({
     host: process.env.HOST_MYSQL,
@@ -329,28 +317,40 @@ app.post("/verify", (req, res) => {
         return res.json({
           status: "Erreur",
           message: "Erreur lors de la vérification du JWT",
+          estConnecte: false,
           redirect: "/",
         });
       }
 
       if (results && results.length === 1) {
-        let identifiantJWT;
         // Vérifier le JWT et récupérer l'identifiant
+        var decoded = jwt.verify(results[0]["jwt"], process.env.SECRET_KEY_JWT);
 
-        res.json({
-          status: "Succès",
-          message: "JWT Vérifié",
-          utilisateur: {
-            identifiant: identifiantJWT,
-          },
-          redirect: "/login",
-        });
+        if (decoded) {
+          res.json({
+            status: "Succès",
+            message: "JWT Vérifié",
+            utilisateur: {
+              identifiant: decoded.identifiant,
+            },
+            estConnecte: true,
+            redirect: "/login",
+          });
+        } else {
+          res.json({
+            status: "Erreur",
+            message: "Jeton inconnu",
+            estConnecte: false,
+            redirect: "/login",
+          });
+        }
       } else {
         connection.end();
         res.json({
           status: "Erreur",
           message: "Jeton inconnu",
-          redirect: "/",
+          estConnecte: false,
+          redirect: "/login",
         });
       }
     }
@@ -359,8 +359,141 @@ app.post("/verify", (req, res) => {
 
 /***************************************************************  UPDATE  *****************************************************************/
 
-app.patch("/update:id", (req, res) => {
-  let identifiant = req.body.identifiant;
+app.get("/profil", (req, res) => {
+  try {
+    //Récupérer le JWT avec l'identifiant utilisateur
+    let jeton = req.query.jeton;
+    var decoded = jwt.verify(jeton, process.env.SECRET_KEY_JWT);
+
+    // Création de la connexion à la base de données
+    const connection = mysql.createConnection({
+      host: process.env.HOST_MYSQL,
+      user: process.env.USERNAME_MYSQL,
+      password: process.env.PASSWORD_MYSQL,
+      database: process.env.DATABASE_MYSQL,
+    });
+    connection.query(
+      `SELECT * FROM users WHERE id = '${decoded.ID_user}'`,
+      (err, results, fields) => {
+        if (err) {
+          connection.end();
+          return res.json({
+            status: "Erreur",
+            message: "Erreur lors de la vérification de l'utilisateur",
+            estConnecte: false,
+            redirect: "/",
+          });
+        }
+
+        if (results && results.length === 1) {
+          const cheminDuFichier = path.join(__dirname, "views", "modify.html");
+          let contenuDuFichier = fs.readFileSync(cheminDuFichier, "utf-8");
+
+          nouvelleValeur = results[0]["identifiant"];
+          contenuDuFichier = contenuDuFichier.replace(
+            'value=""',
+            `value="${nouvelleValeur}"`
+          );
+          contenuDuFichier = contenuDuFichier.replace(
+            ":userID",
+            `${results[0]["id"]}`
+          );
+
+          res.json({
+            status: "Succès",
+            message: "Formulaire envoyé",
+            redirect: "/profil",
+            form: contenuDuFichier,
+          });
+        } else {
+          connection.end();
+          res.json({
+            status: "Erreur",
+            message: "Utilisateur inconnu",
+            estConnecte: false,
+            redirect: "/login",
+          });
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Erreur lors de la lecture du fichier :", error);
+    res.status(500).json({
+      status: "Erreur interne du serveur",
+      message: "Une erreur est survenue lors du traitement de la requête.",
+    });
+  }
+});
+
+app.patch("/update/:userID", (req, res) => {
+  const identifiant = req.body.identifiant;
+  const userID = parseInt(req.params.userID);
+
+  // Création de la connexion à la base de données
+  const connection = mysql.createConnection({
+    host: process.env.HOST_MYSQL,
+    user: process.env.USERNAME_MYSQL,
+    password: process.env.PASSWORD_MYSQL,
+    database: process.env.DATABASE_MYSQL,
+  });
+
+  connection.query(
+    `UPDATE users SET identifiant = ? WHERE id = ?`,
+    [identifiant, userID],
+    (err, results, fields) => {
+      if (err) {
+        return res.json({
+          status: "Erreur",
+          message: "Erreur lors de la vérification de l'utilisateur",
+          estConnecte: false,
+          redirect: "/",
+        });
+      } else {
+        let TokenJWTUtilisateur;
+        // Supprimer l'ancien JWT
+        connection.query(
+          "DELETE FROM users_jwt WHERE id_user = ?",
+          [userID],
+          (err, results, fields) => {
+            if (err) {
+              console.log(err);
+            }
+            // Créer et  Ajouter un nouveau JWT
+            TokenJWTUtilisateur = jwt.sign(
+              {
+                iss: "http://localhost",
+                ID_user: userID,
+                identifiant: identifiant,
+              },
+              process.env.SECRET_KEY_JWT
+            );
+
+            const SQLquery = `INSERT INTO users_jwt (jwt, id_user) VALUES ('${TokenJWTUtilisateur}', '${userID}')`;
+
+            connection.query(SQLquery, (err, results, fields) => {
+              if (!err) {
+                console.error(
+                  "Insertion du JWT pour l'utilisateur :",
+                  identifiant
+                );
+                connection.end();
+                res.json({
+                  identifiant: identifiant,
+                  JWT: TokenJWTUtilisateur,
+                  status: "Succès",
+                  message: "Modification réussie",
+                  redirect: "/dashboard",
+                });
+              } else {
+                console.error("Erreur lors de l'insertion du JWT :", err);
+              }
+            });
+          }
+        );
+      }
+    }
+  );
+  connection.end();
 });
 
 // On écoute sur le port 4000

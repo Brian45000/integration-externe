@@ -1,0 +1,15 @@
+<form action="/update/:userID" method="post" class="needs-validation" novalidate>
+    <div class="mb-3">
+        <label for="nouvelIdentifiant" class="form-label">Nouvel identifiant :</label>
+        <div class="col-8 offset-2">
+            <input type="text" class="form-control" id="nouvelIdentifiant" name="nouvelIdentifiant" value="" required>
+        </div>
+        <div class="invalid-feedback">
+            Veuillez saisir votre nouvel identifiant.
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        <i class="fas fa-edit"></i> Modifier
+    </button>
+</form>

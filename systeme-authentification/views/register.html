@@ -1,12 +1,16 @@
 <form action="/register" method="post" class="needs-validation" novalidate>
     <div class="mb-3">
         <label for="identifiant" class="form-label">Identifiant :</label>
-        <input type="text" class="form-control" id="identifiant" name="identifiant" required>
+        <div class="col-8 offset-2">
+            <input type="text" class="form-control" id="identifiant" name="identifiant" required>
+        </div>
     </div>
 
     <div class="mb-3">
         <label for="motdepasse" class="form-label">Mot de passe :</label>
-        <input type="password" class="form-control" id="motdepasse" name="motdepasse" required>
+        <div class="col-8 offset-2">
+            <input type="password" class="form-control" id="motdepasse" name="motdepasse" required>
+        </div>
     </div>
 
     <button type="submit" class="btn btn-success">

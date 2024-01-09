@@ -50,6 +50,21 @@ app.post("/login", async (req, res) => {
     });
 });
 
+/************************************** LOGOUT ***************************************************/
+
+app.get("/logout", async (req, res) => {
+  await axios
+    .get("http://localhost:4000/logout", {
+      params: {
+        jeton: req.cookies.cookies.JWT,
+      },
+    })
+    .then((resGet) => {
+      res.clearCookie("cookies");
+      res.redirect(resGet.data.redirect);
+    });
+});
+
 /************************************** REGISTER ***************************************************/
 
 app.get("/register", async (req, res) => {
@@ -79,17 +94,108 @@ app.post("/register", async (req, res) => {
     });
 });
 
+/************************************************ MiddleWare Verify ********************************************/
+
+app.all("*", async (req, res, next) => {
+  let estConnecte;
+  if (!req?.cookies?.cookies?.JWT) {
+    estConnecte = false;
+  } else {
+    await axios
+      .post(
+        "http://localhost:4000/verify",
+        {
+          jeton: req.cookies.cookies.JWT,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      .then((resPost) => {
+        estConnecte = resPost.data.estConnecte;
+      });
+  }
+  if (!estConnecte) {
+    res.redirect("/login");
+  }
+  res.locals.estConnecte = estConnecte;
+  next();
+});
+
 /************************************** DASHBOARD ***************************************************/
 
 app.get("/dashboard", async (req, res) => {
   // Récupération des itinéraires de l'utilisateur
   // Envoie des itinéraires dans le template
-  res.render("itineraires");
+  const routes = [
+    {
+      name: "Itinéraire 1",
+      points: [
+        { latitude: 40.7128, longitude: -74.006 },
+        { latitude: 34.0522, longitude: -118.2437 },
+        // ... d'autres points
+      ],
+      distance: 150, // en kilomètres
+    },
+    {
+      name: "Itinéraire 2",
+      points: [
+        { latitude: 51.5074, longitude: -0.1278 },
+        { latitude: 48.8566, longitude: 2.3522 },
+        // ... d'autres points
+      ],
+      distance: 200, // en kilomètres
+    },
+  ];
+  res.render("itineraires", { routes });
 });
 
 /************************************** ITINERARY ***************************************************/
+
 app.post("/itinerary", async (req, res) => {});
 app.get("/itinerary", async (req, res) => {});
+
+/************************************** PROFILE ***************************************************/
+
+app.get("/profil", async (req, res) => {
+  await axios
+    .get("http://localhost:4000/profil", {
+      params: {
+        jeton: req.cookies.cookies.JWT,
+      },
+    })
+    .then((resGet) =>
+      res.render("profil", {
+        formData: resGet.data.form,
+      })
+    );
+});
+
+app.post("/update/:userID", async (req, res) => {
+  const userID = parseInt(req.params.userID);
+  await axios
+    .patch(
+      `http://localhost:4000/update/${userID}`,
+      {
+        identifiant: req.body.nouvelIdentifiant,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+    .then((resPatch) => {
+      //res.clearCookie("cookies");
+      res.cookie("cookies", {
+        identifiant: resPatch.data.identifiant,
+        JWT: resPatch.data.JWT,
+      });
+      res.redirect(resPatch.data.redirect);
+    });
+});
 
 // On écoute sur le port 3000
 app.listen(3000, () => {
