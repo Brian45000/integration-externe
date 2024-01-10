@@ -1,0 +1,30 @@
+.legend{
+    margin-top:0.5em;
+  }
+  .legend img{
+    margin-left : 1em;
+    margin-right: 0.5em;
+  }
+
+  #map { 
+    height: 38vw;
+      width: 100%;
+  }
+
+  /* 
+  Support for browsers that DON'T support Flexbox uses 100% height on the map-container defined above.
+  Map will at least render, for the small amount of browsers that DON'T support flexbox. Users will just have to scroll abit ¯\_(ツ)_/¯
+  */
+  @supports (display: flex) {
+    .map-container {
+      -webkit-box-flex: 1;
+          -ms-flex: 1 0 auto;
+              flex: 1 0 auto;
+    }
+
+    .map-frame {
+      -webkit-box-flex: 1;
+          -ms-flex: 1 0 auto;
+              flex: 1 0 auto;
+    }
+  }

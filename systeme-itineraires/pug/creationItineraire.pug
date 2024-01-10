@@ -1,0 +1,51 @@
+extends base.pug
+
+block content
+ 
+  h5.card-header Carte d'occupation
+   div#dataStation(data-variable-station=dataStations)
+   div#dataStatus(data-variable-status=dataStationStatus)
+  .container-fluid
+    .row.map-container
+      .col-md-6.map-frame
+        #map
+        .legend
+          img(src='/images/bicycle-red.png', alt='Red Icon', height='25', width='25')
+          | Occupée
+          img(src='/images/bicycle-orange.png', alt='Orange Icon', height='25', width='25')
+          | Moins de 5 places disponibles
+          img(src='/images/bicycle-blue.png', alt='Blue Icon', height='25', width='25')
+          | Disponible
+        p#coordinates(style='margin-top: 10px; font-weight: bold;')
+        form#routeForm(action='/create-itineraire', method='post', style='margin-top: 20px;')
+        div.form-group
+            label(for='startPoint') Point de départ:
+            div.col-6.offset-3
+                input#startPoint.form-control(type='text', name='startPoint', placeholder='Entrez le point de départ', required)
+        div.form-group
+            label(for='endPoint') Point d'arrivée:
+            div.col-6.offset-3
+                input#endPoint.form-control(type='text', name='endPoint', placeholder='Entrez le point d\'arrivée', required)
+        button#createRouteBtn.btn.btn-success(type='submit')
+            i.fas.fa-check 
+            | Créer l'itinéraire
+        br
+        a.btn.btn-danger(href='/dashboard') 
+            i.fas.fa-arrow-left 
+            | Retour vers le tableau de bord
+
+
+  script(src='/scripts/mapLeaflet.js') 
+  script.
+     map.on('click', function(e) {
+      // Récupérer les coordonnées du clic
+      var coordinates = e.latlng;
+      // Créer un marqueur et l'ajouter à la carte
+      var marker = L.marker(coordinates).addTo(map);
+
+      // Ajouter la popup au marqueur
+      marker.bindPopup('Nouveau marqueur à <br>Latitude: ' + coordinates.lat.toFixed(6) + ', Longitude: ' + coordinates.lng.toFixed(6)).openPopup();
+
+      // Afficher les coordonnées dans la balise <p>
+      document.getElementById('coordinates').innerText = 'Latitude: ' + coordinates.lat.toFixed(6) + ', Longitude: ' + coordinates.lng.toFixed(6);
+    });
