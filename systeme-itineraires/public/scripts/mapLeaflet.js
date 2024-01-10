@@ -37,7 +37,6 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors",
 }).addTo(map);
 
-//console.log(JSON.parse(stations))
 // Ajouter des marqueurs pour chaque station Velib
 
 stations.forEach(function (station) {

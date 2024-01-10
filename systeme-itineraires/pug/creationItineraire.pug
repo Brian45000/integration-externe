@@ -1,51 +1,135 @@
 extends base.pug
 
 block content
- 
-  h5.card-header Carte d'occupation
-   div#dataStation(data-variable-station=dataStations)
-   div#dataStatus(data-variable-status=dataStationStatus)
-  .container-fluid
-    .row.map-container
-      .col-md-6.map-frame
-        #map
-        .legend
-          img(src='/images/bicycle-red.png', alt='Red Icon', height='25', width='25')
-          | Occupée
-          img(src='/images/bicycle-orange.png', alt='Orange Icon', height='25', width='25')
-          | Moins de 5 places disponibles
-          img(src='/images/bicycle-blue.png', alt='Blue Icon', height='25', width='25')
-          | Disponible
-        p#coordinates(style='margin-top: 10px; font-weight: bold;')
-        form#routeForm(action='/create-itineraire', method='post', style='margin-top: 20px;')
-        div.form-group
-            label(for='startPoint') Point de départ:
-            div.col-6.offset-3
-                input#startPoint.form-control(type='text', name='startPoint', placeholder='Entrez le point de départ', required)
-        div.form-group
-            label(for='endPoint') Point d'arrivée:
-            div.col-6.offset-3
-                input#endPoint.form-control(type='text', name='endPoint', placeholder='Entrez le point d\'arrivée', required)
-        button#createRouteBtn.btn.btn-success(type='submit')
-            i.fas.fa-check 
-            | Créer l'itinéraire
-        br
-        a.btn.btn-danger(href='/dashboard') 
-            i.fas.fa-arrow-left 
-            | Retour vers le tableau de bord
+
+    h5.card-header Création d'un itinéraire
+        div#dataStation(data-variable-station=dataStations)
+        div#dataStatus(data-variable-status=dataStationStatus)
+    .container-fluid
+        .row.map-container
+            .col-md-6.map-frame
+                #map
+                .legend
+                    img(src='/images/bicycle-red.png', alt='Red Icon', height='25', width='25')
+                    | Occupée
+                    img(src='/images/bicycle-orange.png', alt='Orange Icon', height='25', width='25')
+                    | Moins de 5 places disponibles
+                    img(src='/images/bicycle-blue.png', alt='Blue Icon', height='25', width='25')
+                    | Disponible
+                p#coordinates(style='margin-top: 10px; font-weight: bold;')
+                form#routeForm(action='/creation-itineraire', method='post', style='margin-top: 20px;')
+                    div.form-group(style="display:none")
+                        label(for='startPoint') Point de départ:
+                        div.col-6.offset-3
+                            input#startPoint.form-control(type='text', name='startPoint', placeholder='Entrez le point de départ', required)
+                    div.form-group(style="display:none")
+                        label(for='endPoint') Point d'arrivée:
+                        div.col-6.offset-3
+                            input#endPoint.form-control(type='text', name='endPoint', placeholder='Entrez le point d\'arrivée', required)
+                    div.form-group(style="display:none")
+                        label(for='instructions') Instructions :
+                        div.col-6.offset-3
+                            input#instructions.form-control(type='text', name='instructions')        
+                    button#createRouteBtn.btn.btn-success(type='submit')
+                        i.fas.fa-check 
+                        |  Créer l'itinéraire
+                    br
+                    br
+                    button#resetRouteBtn.btn.btn-warning(type='button')
+                        i.fas.fa-undo
+                        |  Réinitialiser l'itinéraire
+                    br
+                    br
+                    a.btn.btn-danger(href='/dashboard') 
+                        i.fas.fa-arrow-left 
+                        |  Retour vers le tableau de bord
 
 
-  script(src='/scripts/mapLeaflet.js') 
-  script.
-     map.on('click', function(e) {
-      // Récupérer les coordonnées du clic
-      var coordinates = e.latlng;
-      // Créer un marqueur et l'ajouter à la carte
-      var marker = L.marker(coordinates).addTo(map);
+    script(src='/scripts/mapLeaflet.js') 
+    script.
+        var startPointInput = document.getElementById('startPoint');
+        var endPointInput = document.getElementById('endPoint');
+        var instructions = document.getElementById('instructions');
+        var markers = [];
+        var lines = [];
 
-      // Ajouter la popup au marqueur
-      marker.bindPopup('Nouveau marqueur à <br>Latitude: ' + coordinates.lat.toFixed(6) + ', Longitude: ' + coordinates.lng.toFixed(6)).openPopup();
+        function updateFormInputs() {
+            startPointInput.value = markers[0] ? markers[0].getLatLng().lat.toFixed(6) + ', ' + markers[0].getLatLng().lng.toFixed(6) : '';
+            endPointInput.value = markers[1] ? markers[1].getLatLng().lat.toFixed(6) + ', ' + markers[1].getLatLng().lng.toFixed(6) : '';
+            if (markers.length === 2) {
+                // Créer un itinéraire entre les deux marqueurs
+                var routingControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(markers[0].getLatLng()),
+                        L.latLng(markers[1].getLatLng())
+                    ],
+                    routeWhileDragging: false,
+                    createMarker: function() { return false; }, // Désactive la création de nouveaux points
+                    dragableWaypoints: false, // Désactive le déplacement des points
+                    language: 'fr'
+                    }).addTo(map);
 
-      // Afficher les coordonnées dans la balise <p>
-      document.getElementById('coordinates').innerText = 'Latitude: ' + coordinates.lat.toFixed(6) + ', Longitude: ' + coordinates.lng.toFixed(6);
-    });
+
+                    // Ajouter un gestionnaire d'événement pour l'événement 'routesfound'
+                routingControl.on('routesfound', function (e) {
+                    var routes = e.routes[0].instructions;
+                    instructions.value = JSON.stringify(routes);
+                }); 
+
+            }
+        }
+
+        function addMarker(coordinates, type){
+            var marker = L.marker(coordinates,{draggable:false}).addTo(map);
+            marker.bindPopup('<br>Latitude: ' + coordinates.lat.toFixed(6) + ', Longitude: ' + coordinates.lng.toFixed(6)).openPopup();
+            markers.push(marker);
+            updateFormInputs();
+        }
+
+        // Ajouter un marqueur lorsqu'on clique sur la carte
+        map.on('click', function(e) {
+            // Récupérer les coordonnées du clic
+            var coordinates = e.latlng;
+
+            if (!startPointInput.value) {
+                startPointInput.value = coordinates.lat.toFixed(6) + ', ' + coordinates.lng.toFixed(6);
+                addMarker(coordinates,'Départ');
+            } else if (!endPointInput.value) {
+                endPointInput.value = coordinates.lat.toFixed(6) + ', ' + coordinates.lng.toFixed(6);
+                addMarker(coordinates,'Arrivé');    
+            }
+
+
+            // Définir le gestionnaire pour la fin du déplacement du marqueur
+            marker.on('dragend', function() {
+                // Mettre à jour les coordonnées des champs de formulaire après le déplacement
+                updateFormInputs();
+            });
+        });
+
+        function resetRoute() {
+            // Supprimer les marqueurs de la carte
+            markers.forEach(function(marker) {
+                marker.remove();
+            });
+
+            // Effacer la liste des marqueurs
+            markers = [];
+
+            // Supprimer la route de la carte
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Polyline) {
+                    layer.remove();
+                }
+            });
+
+            // Réinitialiser les champs du formulaire
+            startPointInput.value = '';
+            endPointInput.value = '';
+            instructions.value = '';
+        }
+
+        document.getElementById('resetRouteBtn').addEventListener('click', function() {
+            // Réinitialiser l'itinéraire
+            resetRoute();
+        });

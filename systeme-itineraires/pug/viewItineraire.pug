@@ -1,0 +1,104 @@
+extends base.pug
+
+block content
+
+    h5.card-header#NameItineraire
+        div#dataStation(data-variable-station=dataStations)
+        div#dataStatus(data-variable-status=dataStationStatus)
+    .container-fluid
+        .row.map-container
+            .col-md-6.map-frame
+                #map
+                .legend
+                    img(src='/images/bicycle-red.png', alt='Red Icon', height='25', width='25')
+                    | Occupée
+                    img(src='/images/bicycle-orange.png', alt='Orange Icon', height='25', width='25')
+                    | Moins de 5 places disponibles
+                    img(src='/images/bicycle-blue.png', alt='Blue Icon', height='25', width='25')
+                    | Disponible
+                p#coordinates(style='margin-top: 10px; font-weight: bold;')
+                form#routeForm(action='/create-itineraire', method='post', style='margin-top: 20px;')
+                div.form-group(style="display:none")
+                    label(for='startPoint') Point de départ:
+                    div.col-6.offset-3
+                        input#startPoint.form-control(type='text', name='startPoint', placeholder='Entrez le point de départ', required)
+                div.form-group(style="display:none")
+                    label(for='endPoint') Point d'arrivée:
+                    div.col-6.offset-3
+                        input#endPoint.form-control(type='text', name='endPoint', placeholder='Entrez le point d\'arrivée', required)
+                div.form-group(style="display:none")
+                    label(for='instructions') Instructions :
+                    div.col-6.offset-3
+                        input#instructions.form-control(type='text', name='instructions')        
+                a.btn.btn-danger(href='/dashboard') 
+                    i.fas.fa-arrow-left 
+                    |  Retour vers le tableau de bord
+
+
+    script(src='/scripts/mapLeaflet.js') 
+    script.
+
+        var itineraire = !{itineraire}
+        var startPointInput = document.getElementById('startPoint');
+        var endPointInput = document.getElementById('endPoint');
+        var instructions = document.getElementById('instructions');
+        var nameItineraireElement = document.getElementById('NameItineraire');
+        nameItineraireElement.innerText = 'Itinéraire ' + itineraire.id;
+        var markers = [];
+
+        let [latitude, longitude] = itineraire.startPoint.split(',');
+
+        // Créer un objet avec les propriétés lat et lng
+        let coordinatesDepart = {
+            lat: parseFloat(latitude.trim()), // Trim pour supprimer les espaces potentiels
+            lng: parseFloat(longitude.trim()),
+        };
+
+        [latitude, longitude] = itineraire.endPoint.split(',');
+
+        // Créer un objet avec les propriétés lat et lng
+        let coordinatesArrive = {
+            lat: parseFloat(latitude.trim()), // Trim pour supprimer les espaces potentiels
+            lng: parseFloat(longitude.trim()),
+        };
+
+        // MAJ des champs caché 
+        startPointInput.value = itineraire.startPoint;
+        endPointInput.value = itineraire.endPoint;
+        instructions.value = itineraire.instructions;
+        
+        //Ajout du départ
+       //Ajout du départ
+        var marker = L.marker(coordinatesDepart,{draggable:false})
+        marker.bindPopup('<br>Depart Latitude: ' + coordinatesDepart.lat.toFixed(6) + ', Longitude: ' + coordinatesDepart.lng.toFixed(6)).openPopup();
+        marker.addTo(map);
+        markers.push(marker);
+
+        //Ajout arrivée 
+        var marker1 = L.marker(coordinatesArrive,{draggable:false});
+        marker1.bindPopup('<br>Arrivée Latitude: ' + coordinatesArrive.lat.toFixed(6) + ', Longitude: ' + coordinatesArrive.lng.toFixed(6)).openPopup();
+        marker1.addTo(map);
+        markers.push(marker1);
+
+        // Créer un itinéraire entre les deux marqueurs
+        var routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(markers[0].getLatLng()),
+                L.latLng(markers[1].getLatLng())
+            ],
+            routeWhileDragging: false,
+            createMarker: function() { return false; }, // Désactive la création de nouveaux points
+            dragableWaypoints: false, // Désactive le déplacement des points
+            language: 'fr'
+        }).addTo(map);
+
+        // Gestion de l'événement de clic pour la carte
+        map.on('click', function(e) {
+            console.log('Je click !');
+        });
+
+        // Gestion de l'événement de fin de glissement pour le marqueur
+        marker.on('dragend', function(e) {
+            e.target.dragging.disable();
+            console.log('Je bouge !');
+        });

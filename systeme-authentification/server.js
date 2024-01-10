@@ -7,25 +7,6 @@ const app = express();
 const jwt = require("jsonwebtoken");
 
 require("dotenv").config();
-
-// Je précise que tout ce qui est dans "public"
-// peut être servi de manière directe par express
-// Donc http://localhost:3000/css/style.css
-// Sera résolu comme public/css/style.css
-
-// le token JWT
-/*var tokenJWT = jwt.sign(
-  {
-    iss: "http://localhost",
-    loggedIn: true,
-    doubleAuthent: false,
-    email: userData.email,
-    username: userData.username,
-    ID_user: results.insertId,
-  },
-  process.env.SECRET_KEY_JWT
-);*/
-
 app.use(express.static(path.join(__dirname, "public")));
 
 // Je dis à express qu'on utilisera pug comme moteur de template
@@ -102,7 +83,8 @@ app.post("/register", async (req, res) => {
     // On vérifie si l'utilisateur existe déjà ou non
     // si il n'existe pas on l'ajoute en BD
     connection.query(
-      `SELECT * FROM users WHERE identifiant = '${identifiant}'`,
+      `SELECT * FROM users WHERE identifiant = ?`,
+      identifiant,
       (err, results, fields) => {
         if (err) {
           connection.end();
@@ -171,8 +153,6 @@ app.post("/login", async (req, res) => {
   let identifiant = req.body.identifiant;
   let motdepasse = req.body.motdepasse;
 
-  console.log("identifiant:", identifiant);
-
   // Création de la connexion à la base de données
   const connection = mysql.createConnection({
     host: process.env.HOST_MYSQL,
@@ -181,7 +161,8 @@ app.post("/login", async (req, res) => {
     database: process.env.DATABASE_MYSQL,
   });
   connection.query(
-    `SELECT * FROM users WHERE identifiant = '${identifiant}' `,
+    `SELECT * FROM users WHERE identifiant = ? `,
+    identifiant,
     (err, results, fields) => {
       if (results && results.length === 1) {
         let isPasswordValid = bcrypt.compare(motdepasse, results[0].motdepasse);
@@ -196,18 +177,22 @@ app.post("/login", async (req, res) => {
             process.env.SECRET_KEY_JWT
           );
 
-          const SQLquery = `INSERT INTO users_jwt (jwt, id_user) VALUES ('${TokenJWTUtilisateur}', '${results[0]["id"]}')`;
+          const SQLquery = `INSERT INTO users_jwt (jwt, id_user) VALUES (?, ?)`;
 
-          connection.query(SQLquery, (err, results, fields) => {
-            if (!err) {
-              console.error(
-                "Insertion du JWT pour l'utilisateur :",
-                identifiant
-              );
-            } else {
-              console.error("Erreur lors de l'insertion du JWT :", err);
+          connection.query(
+            SQLquery,
+            [TokenJWTUtilisateur, results[0]["id"]],
+            (err, results, fields) => {
+              if (!err) {
+                console.error(
+                  "Insertion du JWT pour l'utilisateur :",
+                  identifiant
+                );
+              } else {
+                console.error("Erreur lors de l'insertion du JWT :", err);
+              }
             }
-          });
+          );
           connection.end();
 
           res.json({
@@ -252,7 +237,8 @@ app.get("/logout", (req, res) => {
   // On vérifie si le JWT existe déjà ou non
   // si il existe on le supprime
   connection.query(
-    `SELECT * FROM users_jwt WHERE jwt = '${jeton}'`,
+    `SELECT * FROM users_jwt WHERE jwt = ?`,
+    jeton,
     (err, results, fields) => {
       if (err) {
         connection.end();
@@ -310,7 +296,8 @@ app.post("/verify", (req, res) => {
 
   // On vérifie si le JWT existe déjà ou non
   connection.query(
-    `SELECT * FROM users_jwt WHERE jwt = '${jeton}'`,
+    `SELECT * FROM users_jwt WHERE jwt = ?`,
+    jeton,
     (err, results, fields) => {
       if (err) {
         connection.end();
@@ -332,6 +319,7 @@ app.post("/verify", (req, res) => {
             message: "JWT Vérifié",
             utilisateur: {
               identifiant: decoded.identifiant,
+              ID_user: decoded.ID_user,
             },
             estConnecte: true,
             redirect: "/login",
@@ -373,7 +361,8 @@ app.get("/profil", (req, res) => {
       database: process.env.DATABASE_MYSQL,
     });
     connection.query(
-      `SELECT * FROM users WHERE id = '${decoded.ID_user}'`,
+      `SELECT * FROM users WHERE id = ?`,
+      decoded.ID_user,
       (err, results, fields) => {
         if (err) {
           connection.end();
@@ -468,26 +457,30 @@ app.patch("/update/:userID", (req, res) => {
               process.env.SECRET_KEY_JWT
             );
 
-            const SQLquery = `INSERT INTO users_jwt (jwt, id_user) VALUES ('${TokenJWTUtilisateur}', '${userID}')`;
+            const SQLquery = `INSERT INTO users_jwt (jwt, id_user) VALUES (?, ?)`;
 
-            connection.query(SQLquery, (err, results, fields) => {
-              if (!err) {
-                console.error(
-                  "Insertion du JWT pour l'utilisateur :",
-                  identifiant
-                );
-                connection.end();
-                res.json({
-                  identifiant: identifiant,
-                  JWT: TokenJWTUtilisateur,
-                  status: "Succès",
-                  message: "Modification réussie",
-                  redirect: "/dashboard",
-                });
-              } else {
-                console.error("Erreur lors de l'insertion du JWT :", err);
+            connection.query(
+              SQLquery,
+              [TokenJWTUtilisateur, userID],
+              (err, results, fields) => {
+                if (!err) {
+                  console.error(
+                    "Insertion du JWT pour l'utilisateur :",
+                    identifiant
+                  );
+                  connection.end();
+                  res.json({
+                    identifiant: identifiant,
+                    JWT: TokenJWTUtilisateur,
+                    status: "Succès",
+                    message: "Modification réussie",
+                    redirect: "/dashboard",
+                  });
+                } else {
+                  console.error("Erreur lors de l'insertion du JWT :", err);
+                }
               }
-            });
+            );
           }
         );
       }

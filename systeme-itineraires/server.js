@@ -7,6 +7,8 @@ const cookieParser = require("cookie-parser");
 app.set("view engine", "pug");
 app.set("views", "pug");
 
+require("dotenv").config();
+
 const bodyParser = require("body-parser");
 app.use(
   bodyParser.urlencoded({
@@ -47,7 +49,6 @@ app.post("/login", async (req, res) => {
         JWT: resPost.data.JWT,
       });
       res.redirect(resPost.data.redirect);
-      //  console.log("mon cookie", req.cookies);
     });
 });
 
@@ -99,6 +100,7 @@ app.post("/register", async (req, res) => {
 
 app.all("*", async (req, res, next) => {
   let estConnecte;
+  let id_user = "NC";
   if (!req?.cookies?.cookies?.JWT) {
     estConnecte = false;
   } else {
@@ -116,47 +118,48 @@ app.all("*", async (req, res, next) => {
       )
       .then((resPost) => {
         estConnecte = resPost.data.estConnecte;
+        id_user = resPost.data.utilisateur.ID_user;
       });
   }
   if (!estConnecte) {
     res.redirect("/login");
   }
   res.locals.estConnecte = estConnecte;
+  res.locals.id_user = id_user;
   next();
 });
 
 /************************************** DASHBOARD ***************************************************/
-
 app.get("/dashboard", async (req, res) => {
-  // Récupération des itinéraires de l'utilisateur
-  // Envoie des itinéraires dans le template
-  const routes = [
-    {
-      name: "Itinéraire 1",
-      points: [
-        { latitude: 40.7128, longitude: -74.006 },
-        { latitude: 34.0522, longitude: -118.2437 },
-        // ... d'autres points
-      ],
-      distance: 150, // en kilomètres
-    },
-    {
-      name: "Itinéraire 2",
-      points: [
-        { latitude: 51.5074, longitude: -0.1278 },
-        { latitude: 48.8566, longitude: 2.3522 },
-        // ... d'autres points
-      ],
-      distance: 200, // en kilomètres
-    },
-  ];
-  res.render("itineraires", { routes });
+  // Création de la connexion à la base de données
+  const connection = mysql.createConnection({
+    host: process.env.HOST_MYSQL,
+    user: process.env.USERNAME_MYSQL,
+    password: process.env.PASSWORD_MYSQL,
+    database: process.env.DATABASE_MYSQL,
+  });
+
+  connection.query(
+    "SELECT * FROM itineraires WHERE id_user = ?",
+    [res.locals.id_user],
+    (err, results, fields) => {
+      if (err) {
+        console.error("Erreur lors de la récupération des itinéraires :", err);
+        return res.redirect("/dashboard");
+      }
+
+      const routes = results.map((itineraire) => ({
+        id: itineraire.id,
+        name: "Itineraire " + itineraire.id,
+        startPoint: itineraire.startPoint,
+        endPoint: itineraire.endPoint,
+        distance: 0,
+      }));
+
+      res.render("itineraires", { routes: routes });
+    }
+  );
 });
-
-/************************************** ITINERARY ***************************************************/
-
-app.post("/itinerary", async (req, res) => {});
-app.get("/itinerary", async (req, res) => {});
 
 /************************************** PROFILE ***************************************************/
 
@@ -241,6 +244,116 @@ app.get("/creation-itineraire", async (req, res) => {
       dataStations: JSON.stringify(dataStations), // Convertir en chaîne JSON
       dataStationStatus: JSON.stringify(dataStationStatus), // Convertir en chaîne JSON
     });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post("/creation-itineraire", async (req, res) => {
+  const startPoint = req.body.startPoint;
+  const endPoint = req.body.endPoint;
+  const instructions = req.body.instructions;
+
+  // Création de la connexion à la base de données
+  const connection = mysql.createConnection({
+    host: process.env.HOST_MYSQL,
+    user: process.env.USERNAME_MYSQL,
+    password: process.env.PASSWORD_MYSQL,
+    database: process.env.DATABASE_MYSQL,
+  });
+
+  const SQLquery =
+    "INSERT INTO itineraires (startPoint, endPoint, instructions, id_user) VALUES (?, ?, ?, ?)";
+  connection.query(
+    SQLquery,
+    [startPoint, endPoint, instructions, res.locals.id_user],
+    (err, results, fields) => {
+      if (!err) {
+        console.log(err);
+      } else {
+        connection.end();
+        res.redirect("/dashboard");
+      }
+    }
+  );
+});
+/************************************** DELETE ITINERARY ***************************************************/
+
+app.get("/delete-itineraire/:id", (req, res) => {
+  const idItineraire = req.params.id;
+  // Création de la connexion à la base de données
+  const connection = mysql.createConnection({
+    host: process.env.HOST_MYSQL,
+    user: process.env.USERNAME_MYSQL,
+    password: process.env.PASSWORD_MYSQL,
+    database: process.env.DATABASE_MYSQL,
+  });
+  connection.query(
+    `DELETE FROM itineraires WHERE id = ?`,
+    [idItineraire],
+    (err, results, fields) => {
+      if (err) {
+        console.error("Erreur lors de la suppression de l'itinéraire :", err);
+        return res.redirect("/dashboard");
+      }
+      connection.end();
+      console.log(`Itinéraire avec l'ID ${idItineraire} supprimé avec succès.`);
+      res.redirect("/dashboard");
+    }
+  );
+});
+
+/************************************** VIEW ITINERARY ***************************************************/
+app.get("/view-itineraire/:id", async (req, res) => {
+  try {
+    const idItineraire = req.params.id;
+
+    // Création de la connexion à la base de données
+    const connection = mysql.createConnection({
+      host: process.env.HOST_MYSQL,
+      user: process.env.USERNAME_MYSQL,
+      password: process.env.PASSWORD_MYSQL,
+      database: process.env.DATABASE_MYSQL,
+    });
+    let itineraire;
+    connection.query(
+      "SELECT * FROM itineraires WHERE id = ?",
+      [idItineraire],
+      async (err, results, fields) => {
+        if (err) {
+          console.error(
+            "Erreur lors de la récupération de l'itinéraire :",
+            err
+          );
+          return res.redirect("/dashboard");
+        }
+        if (results.length === 0) {
+          console.log(`Aucun itinéraire trouvé avec l'ID ${idItineraire}`);
+          return res.redirect("/dashboard");
+        }
+        // Récupérer les données de l'itinéraire
+        itineraire = results[0];
+        const [responseStations, responseStatus] = await Promise.all([
+          axios.get(
+            "https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_information.json"
+          ),
+          axios.get(
+            "https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_status.json"
+          ),
+        ]);
+
+        const dataStations = responseStations.data.data.stations;
+        const dataStationStatus = responseStatus.data.data.stations;
+
+        connection.end();
+        res.render("viewItineraire", {
+          dataStations: JSON.stringify(dataStations), // Convertir en chaîne JSON
+          dataStationStatus: JSON.stringify(dataStationStatus), // Convertir en chaîne JSON
+          itineraire: JSON.stringify(itineraire),
+        });
+      }
+    );
   } catch (error) {
     console.error("Error fetching data:", error);
     res.status(500).send("Internal Server Error");
