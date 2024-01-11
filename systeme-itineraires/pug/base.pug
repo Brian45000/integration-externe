@@ -12,10 +12,8 @@ html(lang="fr")
     link(rel='stylesheet', href='/styles/styles.css')
     script(src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js", crossorigin="anonymous", referrerpolicy="no-referrer")
     link(rel="stylesheet", href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css", crossorigin="anonymous")
-    
-
-  body.bg-light.d-flex.justify-content-center.align-items-center.vh-100
-    nav.navbar.navbar-expand-lg.navbar-dark.bg-dark.fixed-top
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js")
+  nav.navbar.navbar-expand-lg.navbar-dark.bg-dark.fixed-top
       .container-fluid
         a.navbar-brand(href='/dashboard') Intégration Externe
 
@@ -34,6 +32,7 @@ html(lang="fr")
               li.nav-item
                 a.nav-link(href='/logout') Déconnecter
 
+  body.bg-light.d-flex.justify-content-center.align-items-center.vh-100
     .container
       div.col3
       .card.col6

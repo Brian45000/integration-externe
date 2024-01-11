@@ -17,6 +17,7 @@ block content
                     img(src='/images/bicycle-blue.png', alt='Blue Icon', height='25', width='25')
                     | Disponible
                 p#coordinates(style='margin-top: 10px; font-weight: bold;')
+              
                 form#routeForm(action='/creation-itineraire', method='post', style='margin-top: 20px;')
                     div.form-group(style="display:none")
                         label(for='startPoint') Point de départ:
@@ -30,16 +31,19 @@ block content
                         label(for='instructions') Instructions :
                         div.col-6.offset-3
                             input#instructions.form-control(type='text', name='instructions')        
+                            input#distance.form-control(type='text', name='distance')        
                     button#createRouteBtn.btn.btn-success(type='submit')
                         i.fas.fa-check 
                         |  Créer l'itinéraire
                     br
                     br
+                    
                     button#resetRouteBtn.btn.btn-warning(type='button')
                         i.fas.fa-undo
                         |  Réinitialiser l'itinéraire
                     br
                     br
+
                     a.btn.btn-danger(href='/dashboard') 
                         i.fas.fa-arrow-left 
                         |  Retour vers le tableau de bord
@@ -47,9 +51,11 @@ block content
 
     script(src='/scripts/mapLeaflet.js') 
     script.
+        
         var startPointInput = document.getElementById('startPoint');
         var endPointInput = document.getElementById('endPoint');
         var instructions = document.getElementById('instructions');
+        var distance = document.getElementById('distance');
         var markers = [];
         var lines = [];
 
@@ -72,8 +78,11 @@ block content
 
                     // Ajouter un gestionnaire d'événement pour l'événement 'routesfound'
                 routingControl.on('routesfound', function (e) {
+
                     var routes = e.routes[0].instructions;
+                    var distanceData = e.routes[0].summary.totalDistance;
                     instructions.value = JSON.stringify(routes);
+                    distance.value = parseInt(distanceData);
                 }); 
 
             }
@@ -95,6 +104,7 @@ block content
                 startPointInput.value = coordinates.lat.toFixed(6) + ', ' + coordinates.lng.toFixed(6);
                 addMarker(coordinates,'Départ');
             } else if (!endPointInput.value) {
+                
                 endPointInput.value = coordinates.lat.toFixed(6) + ', ' + coordinates.lng.toFixed(6);
                 addMarker(coordinates,'Arrivé');    
             }

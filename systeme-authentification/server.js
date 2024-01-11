@@ -163,9 +163,12 @@ app.post("/login", async (req, res) => {
   connection.query(
     `SELECT * FROM users WHERE identifiant = ? `,
     identifiant,
-    (err, results, fields) => {
+    async (err, results, fields) => {
       if (results && results.length === 1) {
-        let isPasswordValid = bcrypt.compare(motdepasse, results[0].motdepasse);
+        let isPasswordValid = await bcrypt.compare(
+          motdepasse,
+          results[0].motdepasse
+        );
         if (isPasswordValid) {
           // Création du JWT et ajout en BDD
           var TokenJWTUtilisateur = jwt.sign(
@@ -487,6 +490,180 @@ app.patch("/update/:userID", (req, res) => {
     }
   );
   connection.end();
+});
+
+app.get("/changePassword", (req, res) => {
+  try {
+    //Récupérer le JWT avec l'identifiant utilisateur
+    let jeton = req.query.jeton;
+    var decoded = jwt.verify(jeton, process.env.SECRET_KEY_JWT);
+
+    // Création de la connexion à la base de données
+    const connection = mysql.createConnection({
+      host: process.env.HOST_MYSQL,
+      user: process.env.USERNAME_MYSQL,
+      password: process.env.PASSWORD_MYSQL,
+      database: process.env.DATABASE_MYSQL,
+    });
+    connection.query(
+      `SELECT * FROM users WHERE id = ?`,
+      decoded.ID_user,
+      (err, results, fields) => {
+        if (err) {
+          connection.end();
+          return res.json({
+            status: "Erreur",
+            message: "Erreur lors de la vérification de l'utilisateur",
+            estConnecte: false,
+            redirect: "/",
+          });
+        }
+
+        if (results && results.length === 1) {
+          const cheminDuFichier = path.join(
+            __dirname,
+            "views",
+            "changePassword.html"
+          );
+          let contenuDuFichier = fs.readFileSync(cheminDuFichier, "utf-8");
+
+          contenuDuFichier = contenuDuFichier.replace(
+            ":userID",
+            `${results[0]["id"]}`
+          );
+
+          res.json({
+            status: "Succès",
+            message: "Formulaire envoyé",
+            redirect: "/changePassword",
+            form: contenuDuFichier,
+          });
+        } else {
+          connection.end();
+          res.json({
+            status: "Erreur",
+            message: "Utilisateur inconnu",
+            estConnecte: false,
+            redirect: "/login",
+          });
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Erreur lors de la lecture du fichier :", error);
+    res.status(500).json({
+      status: "Erreur interne du serveur",
+      message: "Une erreur est survenue lors du traitement de la requête.",
+    });
+  }
+});
+
+app.patch("/changePassword/:userID", (req, res) => {
+  const identifiant = req.body.identifiant;
+  const ancienMotDePasse = req.body.ancienMotDePasse;
+  const nouveauMotDePasse = req.body.nouveauMotDePasse;
+  const confirmationMotDePasse = req.body.confirmationMotDePasse;
+  const userID = parseInt(req.params.userID);
+
+  // Création de la connexion à la base de données
+  const connection = mysql.createConnection({
+    host: process.env.HOST_MYSQL,
+    user: process.env.USERNAME_MYSQL,
+    password: process.env.PASSWORD_MYSQL,
+    database: process.env.DATABASE_MYSQL,
+  });
+
+  // On vérifie si les deux mots de passe sont identiques
+  if (nouveauMotDePasse === confirmationMotDePasse) {
+    // On vérifie si l'ancien mot de passe est bon
+    connection.query(
+      `SELECT * FROM users WHERE id = ?`,
+      userID,
+      async (err, results, fields) => {
+        if (err) {
+          connection.end();
+          return res.json({
+            status: "Erreur",
+            message: "Erreur lors de la vérification de l'utilisateur",
+            estConnecte: false,
+            redirect: "/login",
+          });
+        }
+
+        if (results && results.length === 1) {
+          // On le compare avec bcrypt
+          let isPasswordValid = await bcrypt.compare(
+            ancienMotDePasse,
+            results[0].motdepasse
+          );
+          if (isPasswordValid) {
+            bcrypt.hash(nouveauMotDePasse, 10, function (err, hash) {
+              if (err) {
+                console.log("Erreur lors du hachage du mot de passe ");
+                return res.json({
+                  status: "Erreur",
+                  message: "Erreur lors du hachage du mot de passe",
+                  redirect: "/register",
+                });
+              } else {
+                // L'ancien mot de passe correspond donc on modifie en base le mot de passe
+                connection.query(
+                  `UPDATE users SET motdepasse = ? WHERE id = ?`,
+                  [hash, userID],
+                  (err, results, fields) => {
+                    if (err) {
+                      console.log("Erreur lors de la mise à jour ");
+                      return res.json({
+                        status: "Erreur",
+                        message: "Erreur lors de la mise à jour ",
+                        estConnecte: false,
+                        redirect: "/profil",
+                      });
+                    } else {
+                      console.log("Mot de passe mis à jour ! ");
+                      return res.json({
+                        status: "Succès",
+                        message: "Mot de passe mis à jour !",
+                        estConnecte: true,
+                        redirect: "/profil",
+                      });
+                    }
+                  }
+                );
+              }
+            });
+          } else {
+            connection.end();
+            console.log("l'ancien mot de passe ne correspond pas ! ");
+            res.json({
+              status: "Erreur",
+              message: "l'ancien mot de passe ne correspond pas ! ",
+              estConnecte: false,
+              redirect: "/login",
+            });
+          }
+        } else {
+          connection.end();
+          console.log("Utilisateur inconnu");
+          res.json({
+            status: "Erreur",
+            message: "Utilisateur inconnu",
+            estConnecte: false,
+            redirect: "/login",
+          });
+        }
+      }
+    );
+  } else {
+    connection.end();
+    console.log("Les deux mot de passe ne sont pas identiques !");
+    return res.json({
+      status: "Erreur",
+      message: "Erreur les deux mot de passes ne sont pas identiques !",
+      estConnecte: false,
+      redirect: "/changePassword",
+    });
+  }
 });
 
 // On écoute sur le port 4000

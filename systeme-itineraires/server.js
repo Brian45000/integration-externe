@@ -152,8 +152,8 @@ app.get("/dashboard", async (req, res) => {
         id: itineraire.id,
         name: "Itineraire " + itineraire.id,
         startPoint: itineraire.startPoint,
+        distance: itineraire.distance / 1000,
         endPoint: itineraire.endPoint,
-        distance: 0,
       }));
 
       res.render("itineraires", { routes: routes });
@@ -254,6 +254,7 @@ app.post("/creation-itineraire", async (req, res) => {
   const startPoint = req.body.startPoint;
   const endPoint = req.body.endPoint;
   const instructions = req.body.instructions;
+  const distance = req.body.distance;
 
   // Création de la connexion à la base de données
   const connection = mysql.createConnection({
@@ -264,14 +265,34 @@ app.post("/creation-itineraire", async (req, res) => {
   });
 
   const SQLquery =
-    "INSERT INTO itineraires (startPoint, endPoint, instructions, id_user) VALUES (?, ?, ?, ?)";
+    "INSERT INTO itineraires (startPoint, endPoint, distance, instructions, id_user) VALUES (?, ?, ?, ?, ?)";
   connection.query(
     SQLquery,
-    [startPoint, endPoint, instructions, res.locals.id_user],
-    (err, results, fields) => {
-      if (!err) {
+    [startPoint, endPoint, distance, instructions, res.locals.id_user],
+    async (err, results, fields) => {
+      if (err) {
         console.log(err);
       } else {
+        // Envoi la demande pour générer le pdf
+        await axios
+          .post(
+            "http://localhost:6000/itinerary/",
+            {
+              itineraireId: results.insertId,
+              startPoint: startPoint,
+              distance: distance,
+              endPoint: endPoint,
+              instructions: instructions,
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          )
+          .then((res) => {
+            res.end();
+          });
         connection.end();
         res.redirect("/dashboard");
       }
@@ -358,6 +379,69 @@ app.get("/view-itineraire/:id", async (req, res) => {
     console.error("Error fetching data:", error);
     res.status(500).send("Internal Server Error");
   }
+});
+
+/************************************** DOWNLOAD PDF ***************************************************/
+app.get("/itinerary/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const cookie = req.cookies.cookies.JWT;
+
+    // Appel à la route localhost:6000/itinerary/:id pour récupérer les données binaires du PDF
+    const response = await axios.get(
+      `http://127.0.0.1:6000/itinerary/${id}?cookie=${cookie}`,
+      { responseType: "arraybuffer" }
+    );
+
+    // Renvoyer les données binaires en tant que fichier PDF
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=itinerary_${id}.pdf`
+    );
+    res.send(Buffer.from(response.data, "binary"));
+  } catch (error) {
+    console.error("Error fetching PDF data:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+/************************************** CHANGER MON MOT DE PASSE ***************************************************/
+
+app.get("/changePassword", async (req, res) => {
+  await axios
+    .get("http://localhost:4000/changePassword", {
+      params: {
+        jeton: req.cookies.cookies.JWT,
+      },
+    })
+    .then((resGet) =>
+      res.render("changePassword", {
+        formData: resGet.data.form,
+      })
+    );
+});
+
+app.post("/changePassword/:userID", async (req, res) => {
+  const userID = parseInt(req.params.userID);
+  await axios
+    .patch(
+      `http://localhost:4000/changePassword/${userID}`,
+      {
+        identifiant: req.body.nouvelIdentifiant,
+        ancienMotDePasse: req.body.ancienMotDePasse,
+        nouveauMotDePasse: req.body.nouveauMotDePasse,
+        confirmationMotDePasse: req.body.confirmationMotDePasse,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+    .then((resPatch) => {
+      res.redirect(resPatch.data.redirect);
+    });
 });
 
 // On écoute sur le port 3000

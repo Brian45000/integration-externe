@@ -29,7 +29,8 @@ block content
                 div.form-group(style="display:none")
                     label(for='instructions') Instructions :
                     div.col-6.offset-3
-                        input#instructions.form-control(type='text', name='instructions')        
+                        input#instructions.form-control(type='text', name='instructions')   
+                ul#instructionsList(style='list-style-type: none; padding: 0; margin-top: 10px;')     
                 a.btn.btn-danger(href='/dashboard') 
                     i.fas.fa-arrow-left 
                     |  Retour vers le tableau de bord
@@ -47,6 +48,8 @@ block content
         var markers = [];
 
         let [latitude, longitude] = itineraire.startPoint.split(',');
+
+        map.panTo(new L.LatLng(latitude, longitude));
 
         // Créer un objet avec les propriétés lat et lng
         let coordinatesDepart = {
@@ -92,6 +95,26 @@ block content
             language: 'fr'
         }).addTo(map);
 
+        // Afficher les instructions dans la liste
+        routingControl.on('routesfound', function (e) {
+            var instructionsData = e.routes[0].instructions;
+            instructionsList.innerHTML = '';
+
+            for (var i = 0; i < instructionsData.length; i++) {
+                var li = document.createElement('li');
+
+                // Ajouter la balise d'icône de Leaflet Routing Machine avant chaque instruction
+                var icon = L.DomUtil.create('span', 'leaflet-routing-icon leaflet-routing-icon-' + instructionsData[i].type);
+                li.appendChild(icon);
+
+                // Ajouter le texte de l'instruction
+                var text = document.createTextNode(instructionsData[i].text + ' ' + instructionData[i].distance. ' m');
+                li.appendChild(text);
+
+                // Ajouter le li à la liste
+                instructionsList.appendChild(li);
+            }
+        });
         // Gestion de l'événement de clic pour la carte
         map.on('click', function(e) {
             console.log('Je click !');

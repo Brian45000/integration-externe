@@ -1,16 +1,15 @@
 extends base.pug
 
 block content
-  h5.card-header Mes itinéraires :
+  h5.card-header.mb-2 Mes itinéraires :
     .d-flex.justify-content-end
       a.btn.btn-primary(href='./creation-itineraire')
         i.fas.fa-plus
         |  Nouvel itinéraire
-      a.btn.btn-warning(href='./occupation',style="margin-left:0.5em;")
+      a.btn.btn-warning(href='./occupation', style="margin-left:0.5em;")
         i.fas.fa-map
-        | Carte d'occupation
-
-  table.table.table-bordered.table-responsive.mt-1
+        |  Carte d'occupation
+  table#itineraireTable.table.table-bordered.table-responsive.mt-1(style="text-align : left !important;")
     thead.table-dark
       tr
         th Nom de l'itinéraire
@@ -28,15 +27,15 @@ block content
               ul.list-group
                 li.list-group-item #{route.startPoint}
                 li.list-group-item #{route.endPoint}
-            td.mb-1 Distance: #{route.distance} km
+            td.mb-1 Distance: #{route.distance} m
             td
               a.btn.btn-primary.m-2(href=`/view-itineraire/${route.id}`)
                 i.fas.fa-search
                 | 
 
-              button.btn.btn-success(type='button')
+              a.btn.btn-success(href=`/itinerary/${route.id}`)
                 i.fas.fa-download
-                | 
+                |
 
               a.btn.btn-danger.m-2(href=`/delete-itineraire/${route.id}`)
                 i.fas.fa-trash
@@ -44,8 +43,20 @@ block content
       else
         tr
           td 
-            | Aucune données pour le moment !
+            | Aucunes données pour le moment !
           td
           td.mb-1 
           td
 
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+  script(src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js")
+  script(src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js")
+  script(src="https://cdn.datatables.net/plug-ins/1.10.24/i18n/French.json")
+  script.
+    $(document).ready(function() {
+        $('#itineraireTable').DataTable({
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.10.24/i18n/French.json'
+            }
+        });
+    });
