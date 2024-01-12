@@ -30,7 +30,7 @@ CREATE TABLE itineraires (
     startPoint VARCHAR(255) NOT NULL,
     endPoint VARCHAR(255) NOT NULL,
     instructions TEXT,
-    id_user INT,
+    id_user INT
 );
 
 ```
