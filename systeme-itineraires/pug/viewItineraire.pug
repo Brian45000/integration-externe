@@ -3,6 +3,7 @@ extends base.pug
 block content
 
     h5.card-header#NameItineraire
+        | Consultation de l'itinéraire 
         div#dataStation(data-variable-station=dataStations)
         div#dataStatus(data-variable-status=dataStationStatus)
     .container-fluid
@@ -29,8 +30,9 @@ block content
                 div.form-group(style="display:none")
                     label(for='instructions') Instructions :
                     div.col-6.offset-3
-                        input#instructions.form-control(type='text', name='instructions')   
-                ul#instructionsList(style='list-style-type: none; padding: 0; margin-top: 10px;')     
+                        input#instructions.form-control(type='text', name='instructions')
+                div.col-6.offset-3   
+                    table#instructionsList.table.table-bordered.table-responsive.mt-1    
                 a.btn.btn-danger(href='/dashboard') 
                     i.fas.fa-arrow-left 
                     |  Retour vers le tableau de bord
@@ -43,13 +45,12 @@ block content
         var startPointInput = document.getElementById('startPoint');
         var endPointInput = document.getElementById('endPoint');
         var instructions = document.getElementById('instructions');
+        var instructionsTable = document.getElementById('instructionsList');
         var nameItineraireElement = document.getElementById('NameItineraire');
         nameItineraireElement.innerText = 'Itinéraire ' + itineraire.id;
         var markers = [];
 
         let [latitude, longitude] = itineraire.startPoint.split(',');
-
-        map.panTo(new L.LatLng(latitude, longitude));
 
         // Créer un objet avec les propriétés lat et lng
         let coordinatesDepart = {
@@ -65,13 +66,21 @@ block content
             lng: parseFloat(longitude.trim()),
         };
 
+        // Créer un tableau de points pour les deux marqueurs
+        let latLngs = [coordinatesDepart, coordinatesArrive];
+
+        // Ajuster la vue de la carte pour inclure tous les points
+        map.fitBounds(latLngs);
+
+        // Ajouter une marge autour des points pour une meilleure apparence
+        map.fitBounds(latLngs, { padding: [100, 100] });
+
         // MAJ des champs caché 
         startPointInput.value = itineraire.startPoint;
         endPointInput.value = itineraire.endPoint;
         instructions.value = itineraire.instructions;
-        
+
         //Ajout du départ
-       //Ajout du départ
         var marker = L.marker(coordinatesDepart,{draggable:false})
         marker.bindPopup('<br>Depart Latitude: ' + coordinatesDepart.lat.toFixed(6) + ', Longitude: ' + coordinatesDepart.lng.toFixed(6)).openPopup();
         marker.addTo(map);
@@ -97,23 +106,59 @@ block content
 
         // Afficher les instructions dans la liste
         routingControl.on('routesfound', function (e) {
-            var instructionsData = e.routes[0].instructions;
-            instructionsList.innerHTML = '';
+            let instructionsData = e.routes[0].instructions;
 
             for (var i = 0; i < instructionsData.length; i++) {
-                var li = document.createElement('li');
+                var tr = document.createElement('tr');
 
                 // Ajouter la balise d'icône de Leaflet Routing Machine avant chaque instruction
+                let type;
+                switch (instructionsData[i].type){
+                    case 'Right':
+                        instructionsData[i].type = 'turn-right';
+                        break;
+                    case 'Left':
+                      instructionsData[i].type = 'turn-left';
+                        break;
+                    case 'SharpLeft': 
+                       instructionsData[i].type = 'sharp-left';
+                        break;
+                    case 'SharpRight':
+                        instructionsData[i].type = 'sharp-right';
+                        break;
+                    case 'Head':
+                       instructionsData[i].type = 'depart';
+                        break;
+                    case 'DestinationReached':
+                       instructionsData[i].type = 'arrive';
+                        break;
+                    case 'Roundabout':
+                        instructionsData[i].type = 'enter-roundabout';
+                        break;
+                    
+                }
+
+                var tdIcon = document.createElement('td');
                 var icon = L.DomUtil.create('span', 'leaflet-routing-icon leaflet-routing-icon-' + instructionsData[i].type);
-                li.appendChild(icon);
+                tdIcon.appendChild(icon);
+                tr.appendChild(tdIcon);
 
-                // Ajouter le texte de l'instruction
-                var text = document.createTextNode(instructionsData[i].text + ' ' + instructionData[i].distance. ' m');
-                li.appendChild(text);
+                // Ajouter le texte de l'instruction dans la deuxième cellule (td)
+                var tdText = document.createElement('td');
+                var text = document.createTextNode(instructionsData[i].text);
+                tdText.appendChild(text);
+                tr.appendChild(tdText);
 
-                // Ajouter le li à la liste
-                instructionsList.appendChild(li);
+                // Ajouter la distance dans la troisième cellule (td)
+                var tdDistance = document.createElement('td');
+                var distanceText = document.createTextNode((instructionsData[i].distance / 1000).toFixed(3) + ' km');
+                tdDistance.appendChild(distanceText);
+                tr.appendChild(tdDistance);
+
+                // Ajouter la ligne au tableau
+                instructionsTable.appendChild(tr);
             }
+
         });
         // Gestion de l'événement de clic pour la carte
         map.on('click', function(e) {

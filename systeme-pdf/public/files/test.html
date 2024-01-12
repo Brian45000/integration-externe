@@ -1,0 +1,193 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Intégration Externe</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" referrerpolicy="no-referrer"><style>.legend{
+    margin-top:0.5em;
+}
+.legend img{
+    margin-left : 1em;
+    margin-right: 0.5em;
+}
+
+#map { 
+    height: 250px;
+    width: 500px;
+}
+
+body{
+    top: 5em;
+    position: relative
+}
+
+
+@supports (display: flex) {
+    .map-container {
+    -webkit-box-flex: 1;
+        -ms-flex: 1 0 auto;
+            flex: 1 0 auto;
+    }
+
+    .map-frame {
+    -webkit-box-flex: 1;
+        -ms-flex: 1 0 auto;
+            flex: 1 0 auto;
+    }
+}    
+@media print {
+    .myDiv {
+        break-inside: avoid;
+    }
+}</style><script>function scriptloader(){
+ 
+             var routingControl = L.Routing.control({
+             waypoints: [
+                 L.latLng(markers[0].getLatLng()),
+                 L.latLng(markers[1].getLatLng())
+             ],
+             routeWhileDragging: false,
+             createMarker: function() { return false; }, // Désactive la création de nouveaux points
+             dragableWaypoints: false, // Désactive le déplacement des points
+             language: 'fr',
+             show : false,
+         }).addTo(map);
+             
+         // Afficher les instructions dans la liste
+         routingControl.on('routesfound', function (e) {
+             let instructionsData = e.routes[0].instructions;
+
+             for (var i = 0; i < instructionsData.length; i++) {
+                 var tr = document.createElement('tr');
+
+                 // Ajouter la balise d'icône de Leaflet Routing Machine avant chaque instruction
+                 let type;
+                 switch (instructionsData[i].type){
+                     case 'Right':
+                         instructionsData[i].type = 'turn-right';
+                         break;
+                     case 'Left':
+                         instructionsData[i].type = 'turn-left';
+                         break;
+                     case 'SharpLeft': 
+                         instructionsData[i].type = 'sharp-left';
+                         break;
+                     case 'SharpRight':
+                         instructionsData[i].type = 'sharp-right';
+                         break;
+                     case 'Head':
+                         instructionsData[i].type = 'depart';
+                         break;
+                     case 'DestinationReached':
+                         instructionsData[i].type = 'arrive';
+                         break;
+                     case 'Roundabout':
+                         instructionsData[i].type = 'enter-roundabout';
+                         break;
+                     
+                 }
+
+                 var tdIcon = document.createElement('td');
+                 var icon = L.DomUtil.create('span', 'leaflet-routing-icon leaflet-routing-icon-' + instructionsData[i].type);
+                 tdIcon.appendChild(icon);
+                 tr.appendChild(tdIcon);
+
+                 // Ajouter le texte de l'instruction dans la deuxième cellule (td)
+                 var tdText = document.createElement('td');
+                 var text = document.createTextNode(instructionsData[i].text);
+                 tdText.appendChild(text);
+                 tr.appendChild(tdText);
+
+                 // Ajouter la distance dans la troisième cellule (td)
+                 var tdDistance = document.createElement('td');
+                 var distanceText = document.createTextNode((instructionsData[i].distance / 1000).toFixed(3) + ' km');
+                 tdDistance.appendChild(distanceText);
+                 tr.appendChild(tdDistance);
+
+                 // Ajouter la ligne au tableau
+                 instructionsTable.appendChild(tr);
+
+             }
+         });
+       }
+</script><script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==" crossorigin="anonymous" referrerpolicy="no-referrer" async></script><link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" crossorigin="anonymous"><script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js" onload="scriptloader()" crossorigin="anonymous" referrerpolicy="no-referrer" defer> </script><link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" crossorigin="anonymous"></head><body class="bg-light d-flex justify-content-center align-items-center"><div class="container"><div class="col3"></div><div class="card col6"><div class="card-body text-center p-4" id="myDiv"><h5 class="card-header" id="NameItineraire"></h5><div class="container-fluid"><div class="row map-container"><div class="col-md-6 map-frame"><div id="map"></div><div class="legend"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAQCAYAAAAWGF8bAAAABmJLR0QA/wD/AP+gvaeTAAABWklEQVQ4jcXSv2oVURgE8N+iQQT7NEabQLCxtBZFCNjZKHmBYIJVCn0BS0FQsLEKIuQiWgja+QCWCqLXFHb+S4KriGLESfNdWZebSCTggYXD7MycOfMd/scKz0LC8l4ZzoV7ZXrqX5J8DSd7/w6EN+FpaLbzaHqiORzHORzEzR7/NM7gfMNgN0kvVNLtvtdhYjeGj8JmiecLmwgvwnrhizsZTFXpn8OnElwJj6vPY2Gp8LPhSfgS1krzIMx0zUanDsP38DEcCpPhXXge2vAwzHT466VJ2AhTOs/hYjhR+8ud9LPhVx00He4X51WlnAwLhQ1U5GGJb+8wiKvFactsOvwI1wofhnZ/r84beI99uISfuIUW14vToGlYDUv49sc4qtCEhc415wu7M2aA4/iLha2okjc6Q3lZ+w/hyBjDPn80lLVwuDvpQfXzNtwNR//yzEb8Nqz8NtvrtQU5xwahlEpwBQAAAABJRU5ErkJggg==" alt="Red Icon" height="25" width="25">Occupée<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAQCAYAAAAWGF8bAAAABmJLR0QA/wD/AP+gvaeTAAAB8klEQVQ4ja3RTYjNcRTG8c/5m2ZCEsm4M0YpkyIvC7JCEQoL2ZCQFSILkcwdC4sxM0QUmbKV1MjaSsmCLTYaMyuZMd4TEe79/yz86Xa9TXG259tznvM8/OeJsUAjHR4IC4TLLSfs/BObjfFsL65Ldowes2rMDn844UNkNpS63Pq+GzygaeIkA3he6rYsSH8XLNsWLExsxvjEhTp4NdYEW0rd+v8q+H2Gy7YGV//w1tCMl+bFJV/qd7/MMNiJCkj2tnSL0kuNeIjXiTmj0+z+rcPhTm2RnMVa5Jgs6ZBZKVkhsyRy6xOng42JQ1iKT2jEzZQ52tplIAqxe5iKQczCu4ZGs9NnE6vcxwvMSuG2cDhydwr+NV6hHW9SWJQVzqZGsi/CdjQlTk8/7n1zt2dyuzAfTXnVwcj1FGKP0DiO5RH2Y0okZ7LizcFSj77kWy5B70hZGilLMjcQwpm2XkO+Nf2omtuApmpypHTCxeK7dQ21geYV57MGzyIZlziAStCXeFv94FxN7tHWa2i47FCEjzUSqQE3selpp33FpfsjHfYIEyRXSj2O1hVZy5+Hp2X7E+2J/hg+Zm7k7mJKYTvHXLxQtaTlpMe1ar/gFaW8yisWZ61dBlJYhGtoFiZLrgpL68XgJ57mRH9esXjmKU/q+X+er6GWs8pZg3wIAAAAAElFTkSuQmCC" alt="Orange Icon" height="25" width="25">Moins de 5 places disponibles<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAQCAYAAAAWGF8bAAAABmJLR0QA/wD/AP+gvaeTAAAB7UlEQVQ4jcWTu2uUQRTFf2c3ZhGLkBTu5psvASEaUDApktIHihZqZaOIiiCoJFjIWij2ahFRiGBjJUIwIv4FNhYKgqAWSh6FSL7ZjUsi8YFosnMt9vOxbpZIGk83c84998y9DPwXOP8K5w3n76wkzfyTobgKPACO4cq7VpPkC3FpZx3XM5XD+bc4/wxMzXv/idgfIWgrsoPAWmQ363jTbmAP6BBJ5/jKhj8RJYeRxpo/RdMUCpt5rsW/meVnKB0HltLTGZJIFDpbgTfAPFgPpfKp5gmjpAvpOrAXCEAb4iKBHYjtBAbIaB/YCOgAWBEYBL4BrYhHBLuAdxNKzV4AHcAU0A184nvLBmTrWFN9CVQQ3Zg9xjiP9CTVzwNzwEbgA2Z9mTRZB2gI6SiQQzZCZf1n3udnESeALRg5FM6BrqRmk0Ari9ltmIaBdqRrwvmPQJkk2kTsb2OcbLKJyyTRJWK/gFFG1f1Y9jUwShIVcX4SkW+pK7EwCplZTFlkZxFLBN1CtoCqN2oaBIiZrmnipAj6+rseg9g/xHkjKg39Ipw/XbvzdxtyLqePSsO1D5HcE1HSi/QUaE+XEoBeoIIxgI/e1Rk26kmXMgehP4N3E5j1AfcReYw2xBiBwQYzoEEv8mDjEPpJ4pkm8189fgAR+bjS+28E+QAAAABJRU5ErkJggg==" alt="Blue Icon" height="25" width="25">Disponible</div><p id="coordinates" style="margin-top: 10px; font-weight: bold;"></p><form id="routeForm" action="/create-itineraire" method="post" style="margin-top: 20px;"></form><div class="form-group" style="display:none"><label for="startPoint">Point de départ:</label><div class="col-6 offset-3"><input class="form-control" id="startPoint" type="text" name="startPoint" placeholder="Entrez le point de départ" required></div></div><div class="form-group" style="display:none"><label for="endPoint">Point d'arrivée:</label><div class="col-6 offset-3"><input class="form-control" id="endPoint" type="text" name="endPoint" placeholder="Entrez le point d'arrivée" required></div></div><div class="form-group" style="display:none"><label for="instructions">Instructions :</label><div class="col-6 offset-3"><input class="form-control" id="instructions" type="text" name="instructions"></div></div><div class="col">  <table class="table table-bordered table-responsive mt-1" id="instructionsList">      </table></div></div></div></div><script type="text/javascript">var itineraire = {"id":138,"startPoint":"48.891979, 2.460659","endPoint":"48.731483, 2.254751","instructions":"[{\"type\":\"Head\",\"distance\":307.7,\"time\":49.3,\"road\":\"Rue Carnot\",\"direction\":\"NW\",\"index\":0,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"Se diriger vers le nord-ouest sur la rue Carnot\"},{\"type\":\"EndOfRoad\",\"distance\":502.8,\"time\":45.2,\"road\":\"Rue Jean Jaurès\",\"direction\":\"SW\",\"index\":6,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"Tourner à gauche sur la rue Jean Jaurès (D 117)\"},{\"type\":\"Continue\",\"distance\":720.9,\"time\":66.4,\"road\":\"Rue Anatole France\",\"direction\":\"SW\",\"index\":34,\"mode\":\"driving\",\"modifier\":\"Straight\",\"text\":\"Continuer tout droit sur la rue Anatole France (D 117)\"},{\"type\":\"EndOfRoad\",\"distance\":467.9,\"time\":32.8,\"road\":\"Rue Anatole France\",\"direction\":\"SW\",\"index\":64,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"Tourner à gauche sur la rue Anatole France (D 40)\"},{\"type\":\"Continue\",\"distance\":454,\"time\":43.5,\"road\":\"Boulevard Henri Barbusse\",\"direction\":\"S\",\"index\":81,\"mode\":\"driving\",\"modifier\":\"SlightLeft\",\"text\":\"Continuer légèrement à gauche sur le boulevard Henri Barbusse (D 36b)\"},{\"type\":\"Right\",\"distance\":170.6,\"time\":29.7,\"road\":\"Rue Irène Joliot-Curie\",\"direction\":\"SW\",\"index\":94,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Tourner à droite sur la rue Irène Joliot-Curie\"},{\"type\":\"Left\",\"distance\":216.4,\"time\":31.299999999,\"road\":\"Rue de Benfleet\",\"direction\":\"SE\",\"index\":99,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"Tourner à gauche sur la rue de Benfleet\"},{\"type\":\"Right\",\"distance\":131.1,\"time\":12.2,\"road\":\"Boulevard Henri Barbusse\",\"direction\":\"S\",\"index\":107,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Tourner à droite sur le boulevard Henri Barbusse (D 36bis)\"},{\"type\":\"OnRamp\",\"distance\":424,\"time\":35.9,\"road\":\"\",\"direction\":\"W\",\"index\":112,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Prendre la sortie à droite en direction de Paris Pte de Bagnolet\"},{\"type\":\"Merge\",\"distance\":2205.5,\"time\":143.9,\"road\":\"\",\"direction\":\"SW\",\"index\":127,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"S’insérer légèrement à gauche sur A 3\"},{\"type\":\"SlightLeft\",\"distance\":134,\"time\":20.1,\"road\":\"\",\"direction\":\"S\",\"index\":167,\"mode\":\"driving\",\"modifier\":\"SlightLeft\",\"text\":\"Tourner légèrement à gauche\"},{\"type\":\"Fork\",\"distance\":31.6,\"time\":4.7,\"road\":\"Avenue Cartellier\",\"direction\":\"SE\",\"index\":176,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Tenir la droite sur l’avenue Cartellier (D 37)\"},{\"type\":\"OnRamp\",\"distance\":303.3,\"time\":19.5,\"road\":\"\",\"direction\":\"S\",\"index\":178,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Prendre la sortie à droite\"},{\"type\":\"Merge\",\"distance\":7106.4,\"time\":457,\"road\":\"Boulevard Périphérique Intérieur\",\"direction\":\"S\",\"index\":187,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"S’insérer légèrement à gauche sur le boulevard Périphérique Intérieur\"},{\"type\":\"OffRamp\",\"distance\":213,\"time\":16.5,\"road\":\"\",\"direction\":\"W\",\"index\":295,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Prendre la sortie en direction d’A 6b: Bordeaux\"},{\"type\":\"Continue\",\"distance\":10148.4,\"time\":533.5,\"road\":\"Tunnel d'Italie\",\"direction\":\"W\",\"index\":307,\"mode\":\"driving\",\"modifier\":\"Straight\",\"text\":\"Continuer tout droit sur le tunnel d’Italie (A 6b)\"},{\"type\":\"Merge\",\"distance\":2874.9,\"time\":128.3,\"road\":\"L'Aquitaine\",\"direction\":\"S\",\"index\":505,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"S’insérer légèrement à gauche sur L’Aquitaine (A 10)\"},{\"type\":\"Fork\",\"distance\":1762.4,\"time\":101.4,\"road\":\"L'Aquitaine\",\"direction\":\"SW\",\"index\":540,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Tenir la droite en direction d’Orléans-Nantes-Bordeaux (péage)\"},{\"type\":\"Fork\",\"distance\":1831.4,\"time\":105.9,\"road\":\"\",\"direction\":\"W\",\"index\":572,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"Tenir la gauche en direction de D 444: Versailles\"},{\"type\":\"OffRamp\",\"distance\":595.8,\"time\":38.2,\"road\":\"\",\"direction\":\"NW\",\"index\":604,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Prendre la sortie en direction de D 444: Versailles\"},{\"type\":\"SlightRight\",\"distance\":328.4,\"time\":39.4,\"road\":\"\",\"direction\":\"N\",\"index\":624,\"mode\":\"driving\",\"modifier\":\"SlightRight\",\"text\":\"Tourner légèrement à droite\"},{\"type\":\"Roundabout\",\"distance\":83,\"time\":12.6,\"road\":\"Route de Palaiseau\",\"direction\":\"N\",\"exit\":2,\"index\":639,\"mode\":\"driving\",\"modifier\":\"SlightRight\",\"text\":\"Prendre le rond-point de la voie du Général de Gaulle, puis la seconde sortie sur la route de Palaiseau (D 117)\"},{\"type\":\"Right\",\"distance\":66.8,\"time\":6.699999999,\"road\":\"Route de Palaiseau\",\"direction\":\"N\",\"exit\":2,\"index\":648,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Sortir du rond-point sur la route de Palaiseau (D 117)\"},{\"type\":\"Roundabout\",\"distance\":11.6,\"time\":1.4,\"road\":\"Rue de Vilgénis\",\"direction\":\"E\",\"exit\":1,\"index\":659,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Prendre le rond-point, puis la première sortie sur la rue de Vilgénis (D 120)\"},{\"type\":\"Right\",\"distance\":799.5,\"time\":123.7,\"road\":\"Rue de Vilgénis\",\"direction\":\"E\",\"exit\":1,\"index\":664,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Sortir du rond-point sur la rue de Vilgénis (D 120)\"},{\"type\":\"Continue\",\"distance\":116.8,\"time\":10.9,\"road\":\"Rue de Versailles\",\"direction\":\"NE\",\"index\":706,\"mode\":\"driving\",\"modifier\":\"Straight\",\"text\":\"Continuer tout droit sur la rue de Versailles (D 120)\"},{\"type\":\"Roundabout\",\"distance\":8.6,\"time\":0.8,\"road\":\"\",\"direction\":\"SE\",\"index\":713,\"mode\":\"driving\",\"modifier\":\"Right\",\"text\":\"Prendre le rond-point\"},{\"type\":\"DestinationReached\",\"distance\":0,\"time\":0,\"road\":\"\",\"direction\":\"N\",\"index\":718,\"mode\":\"driving\",\"modifier\":\"Left\",\"text\":\"Vous êtes arrivé à votre destination, sur la gauche\"}]"}
+var startPointInput = document.getElementById('startPoint');
+var endPointInput = document.getElementById('endPoint');
+var instructions = document.getElementById('instructions');
+var instructionsTable = document.getElementById('instructionsList');
+var nameItineraireElement = document.getElementById('NameItineraire');
+nameItineraireElement.innerText = 'Itinéraire ' + itineraire.id;
+var markers = [];
+
+// MAJ des champs caché 
+startPointInput.value = itineraire.startPoint;
+endPointInput.value = itineraire.endPoint;
+instructions.value = itineraire.instructions;
+
+iconRed = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAQCAYAAAAWGF8bAAAABmJLR0QA/wD/AP+gvaeTAAABWklEQVQ4jcXSv2oVURgE8N+iQQT7NEabQLCxtBZFCNjZKHmBYIJVCn0BS0FQsLEKIuQiWgja+QCWCqLXFHb+S4KriGLESfNdWZebSCTggYXD7MycOfMd/scKz0LC8l4ZzoV7ZXrqX5J8DSd7/w6EN+FpaLbzaHqiORzHORzEzR7/NM7gfMNgN0kvVNLtvtdhYjeGj8JmiecLmwgvwnrhizsZTFXpn8OnElwJj6vPY2Gp8LPhSfgS1krzIMx0zUanDsP38DEcCpPhXXge2vAwzHT466VJ2AhTOs/hYjhR+8ud9LPhVx00He4X51WlnAwLhQ1U5GGJb+8wiKvFactsOvwI1wofhnZ/r84beI99uISfuIUW14vToGlYDUv49sc4qtCEhc415wu7M2aA4/iLha2okjc6Q3lZ+w/hyBjDPn80lLVwuDvpQfXzNtwNR//yzEb8Nqz8NtvrtQU5xwahlEpwBQAAAABJRU5ErkJggg==`;
+var redIcon = L.icon({
+iconUrl: iconRed,
+iconSize: [25, 25], // Taille de l'icône
+iconAnchor: [10, 10], // Point d'ancrage de l'icône par rapport à sa position
+popupAnchor: [0, -32], // Point d'ancrage du popup par rapport à l'icône
+});
+
+iconOrange = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAQCAYAAAAWGF8bAAAABmJLR0QA/wD/AP+gvaeTAAAB8klEQVQ4ja3RTYjNcRTG8c/5m2ZCEsm4M0YpkyIvC7JCEQoL2ZCQFSILkcwdC4sxM0QUmbKV1MjaSsmCLTYaMyuZMd4TEe79/yz86Xa9TXG259tznvM8/OeJsUAjHR4IC4TLLSfs/BObjfFsL65Ldowes2rMDn844UNkNpS63Pq+GzygaeIkA3he6rYsSH8XLNsWLExsxvjEhTp4NdYEW0rd+v8q+H2Gy7YGV//w1tCMl+bFJV/qd7/MMNiJCkj2tnSL0kuNeIjXiTmj0+z+rcPhTm2RnMVa5Jgs6ZBZKVkhsyRy6xOng42JQ1iKT2jEzZQ52tplIAqxe5iKQczCu4ZGs9NnE6vcxwvMSuG2cDhydwr+NV6hHW9SWJQVzqZGsi/CdjQlTk8/7n1zt2dyuzAfTXnVwcj1FGKP0DiO5RH2Y0okZ7LizcFSj77kWy5B70hZGilLMjcQwpm2XkO+Nf2omtuApmpypHTCxeK7dQ21geYV57MGzyIZlziAStCXeFv94FxN7tHWa2i47FCEjzUSqQE3selpp33FpfsjHfYIEyRXSj2O1hVZy5+Hp2X7E+2J/hg+Zm7k7mJKYTvHXLxQtaTlpMe1ar/gFaW8yisWZ61dBlJYhGtoFiZLrgpL68XgJ57mRH9esXjmKU/q+X+er6GWs8pZg3wIAAAAAElFTkSuQmCC`;
+var orangeIcon = L.icon({
+iconUrl: iconOrange,
+iconSize: [25, 25], // Taille de l'icône
+iconAnchor: [10, 10], // Point d'ancrage de l'icône par rapport à sa position
+popupAnchor: [0, -32], // Point d'ancrage du popup par rapport à l'icône
+});
+
+iconBlue = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAQCAYAAAAWGF8bAAAABmJLR0QA/wD/AP+gvaeTAAAB7UlEQVQ4jcWTu2uUQRTFf2c3ZhGLkBTu5psvASEaUDApktIHihZqZaOIiiCoJFjIWij2ahFRiGBjJUIwIv4FNhYKgqAWSh6FSL7ZjUsi8YFosnMt9vOxbpZIGk83c84998y9DPwXOP8K5w3n76wkzfyTobgKPACO4cq7VpPkC3FpZx3XM5XD+bc4/wxMzXv/idgfIWgrsoPAWmQ363jTbmAP6BBJ5/jKhj8RJYeRxpo/RdMUCpt5rsW/meVnKB0HltLTGZJIFDpbgTfAPFgPpfKp5gmjpAvpOrAXCEAb4iKBHYjtBAbIaB/YCOgAWBEYBL4BrYhHBLuAdxNKzV4AHcAU0A184nvLBmTrWFN9CVQQ3Zg9xjiP9CTVzwNzwEbgA2Z9mTRZB2gI6SiQQzZCZf1n3udnESeALRg5FM6BrqRmk0Ari9ltmIaBdqRrwvmPQJkk2kTsb2OcbLKJyyTRJWK/gFFG1f1Y9jUwShIVcX4SkW+pK7EwCplZTFlkZxFLBN1CtoCqN2oaBIiZrmnipAj6+rseg9g/xHkjKg39Ipw/XbvzdxtyLqePSsO1D5HcE1HSi/QUaE+XEoBeoIIxgI/e1Rk26kmXMgehP4N3E5j1AfcReYw2xBiBwQYzoEEv8mDjEPpJ4pkm8189fgAR+bjS+28E+QAAAABJRU5ErkJggg==`;
+var blueIcon = L.icon({
+iconUrl: iconBlue,
+iconSize: [25, 25],
+iconAnchor: [10, 10],
+popupAnchor: [0, -32],
+});
+
+// JavaScript pour initialiser la carte Leaflet
+var map = L.map("map", {
+center: [48.8566, 2.3522],
+zoom: 15,
+});
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+attribution: "© OpenStreetMap contributors",
+}).addTo(map);
+
+
+let [latitude, longitude] = itineraire.startPoint.split(',');
+
+// Créer un objet avec les propriétés lat et lng
+let coordinatesDepart = {
+    lat: parseFloat(latitude.trim()), // Trim pour supprimer les espaces potentiels
+    lng: parseFloat(longitude.trim()),
+};
+
+[latitude, longitude] = itineraire.endPoint.split(',');
+
+// Créer un objet avec les propriétés lat et lng
+let coordinatesArrive = {
+    lat: parseFloat(latitude.trim()), // Trim pour supprimer les espaces potentiels
+    lng: parseFloat(longitude.trim()),
+};
+
+// Créer un tableau de points pour les deux marqueurs
+let latLngs = [coordinatesDepart, coordinatesArrive];
+
+// Ajuster la vue de la carte pour inclure tous les points
+map.fitBounds(latLngs);
+
+// Ajouter une marge autour des points pour une meilleure apparence
+map.fitBounds(latLngs, { padding: [100, 100] });
+
+//Ajout du départ
+var marker = L.marker(coordinatesDepart,{draggable:false})
+marker.bindPopup('<br>Depart Latitude: ' + coordinatesDepart.lat.toFixed(6) + ', Longitude: ' + coordinatesDepart.lng.toFixed(6)).openPopup();
+marker.addTo(map);
+markers.push(marker);
+
+//Ajout arrivée 
+var marker1 = L.marker(coordinatesArrive,{draggable:false});
+marker1.bindPopup('<br>Arrivée Latitude: ' + coordinatesArrive.lat.toFixed(6) + ', Longitude: ' + coordinatesArrive.lng.toFixed(6)).openPopup();
+marker1.addTo(map);
+markers.push(marker1);
+</script></div></div></div></body></html><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous" async></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous" async> </script>

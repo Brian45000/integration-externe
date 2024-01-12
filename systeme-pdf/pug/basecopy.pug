@@ -1,0 +1,244 @@
+doctype html
+html(lang="fr")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Intégration Externe
+    link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css", integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN", crossorigin="anonymous")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css", crossorigin="anonymous")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css", integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==", crossorigin="anonymous", referrerpolicy="no-referrer" )
+    style.
+        .legend{
+            margin-top:0.5em;
+        }
+        .legend img{
+            margin-left : 1em;
+            margin-right: 0.5em;
+        }
+
+        #map { 
+            height: 250px;
+            width: 500px;
+        }
+
+        body{
+            top: 5em;
+            position: relative
+        }
+
+
+        @supports (display: flex) {
+            .map-container {
+            -webkit-box-flex: 1;
+                -ms-flex: 1 0 auto;
+                    flex: 1 0 auto;
+            }
+
+            .map-frame {
+            -webkit-box-flex: 1;
+                -ms-flex: 1 0 auto;
+                    flex: 1 0 auto;
+            }
+        }
+    script.
+       function scriptloader(){
+        
+                    var routingControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(markers[0].getLatLng()),
+                        L.latLng(markers[1].getLatLng())
+                    ],
+                    routeWhileDragging: false,
+                    createMarker: function() { return false; }, // Désactive la création de nouveaux points
+                    dragableWaypoints: false, // Désactive le déplacement des points
+                    language: 'fr',
+                    show : false,
+                }).addTo(map);
+                    
+                // Afficher les instructions dans la liste
+                routingControl.on('routesfound', function (e) {
+                    let instructionsData = e.routes[0].instructions;
+
+                    for (var i = 0; i < instructionsData.length; i++) {
+                        var tr = document.createElement('tr');
+
+                        // Ajouter la balise d'icône de Leaflet Routing Machine avant chaque instruction
+                        let type;
+                        switch (instructionsData[i].type){
+                            case 'Right':
+                                instructionsData[i].type = 'turn-right';
+                                break;
+                            case 'Left':
+                                instructionsData[i].type = 'turn-left';
+                                break;
+                            case 'SharpLeft': 
+                                instructionsData[i].type = 'sharp-left';
+                                break;
+                            case 'SharpRight':
+                                instructionsData[i].type = 'sharp-right';
+                                break;
+                            case 'Head':
+                                instructionsData[i].type = 'depart';
+                                break;
+                            case 'DestinationReached':
+                                instructionsData[i].type = 'arrive';
+                                break;
+                            case 'Roundabout':
+                                instructionsData[i].type = 'enter-roundabout';
+                                break;
+                            
+                        }
+
+                        var tdIcon = document.createElement('td');
+                        var icon = L.DomUtil.create('span', 'leaflet-routing-icon leaflet-routing-icon-' + instructionsData[i].type);
+                        tdIcon.appendChild(icon);
+                        tr.appendChild(tdIcon);
+
+                        // Ajouter le texte de l'instruction dans la deuxième cellule (td)
+                        var tdText = document.createElement('td');
+                        var text = document.createTextNode(instructionsData[i].text);
+                        tdText.appendChild(text);
+                        tr.appendChild(tdText);
+
+                        // Ajouter la distance dans la troisième cellule (td)
+                        var tdDistance = document.createElement('td');
+                        var distanceText = document.createTextNode((instructionsData[i].distance / 1000).toFixed(3) + ' km');
+                        tdDistance.appendChild(distanceText);
+                        tr.appendChild(tdDistance);
+
+                        // Ajouter la ligne au tableau
+                        instructionsTable.appendChild(tr);
+
+                    }
+                });
+              }
+
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js", 
+    integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==", crossorigin="anonymous", referrerpolicy="no-referrer" async)
+    link(rel="stylesheet", href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css", crossorigin="anonymous")
+    script(src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js",  onload='scriptloader()' crossorigin="anonymous", referrerpolicy="no-referrer" defer )  
+    link(rel="stylesheet", href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css", crossorigin="anonymous" )
+  
+  body.bg-light.d-flex.justify-content-center.align-items-center
+    .container
+      div.col3
+      .card.col6
+        div#myDiv.card-body.text-center.p-4
+          h5.card-header#NameItineraire
+          .container-fluid
+              .row.map-container
+                  .col-md-6.map-frame
+                      #map
+                      .legend
+                          img(src="data:image/png;base64,"+base64Red, alt='Red Icon', height='25', width='25')
+                          | Occupée
+                          img(src="data:image/png;base64,"+base64Orange, alt='Orange Icon', height='25', width='25')
+                          | Moins de 5 places disponibles
+                          img(src="data:image/png;base64,"+base64Blue, alt='Blue Icon', height='25', width='25')
+                          | Disponible
+                      p#coordinates(style='margin-top: 10px; font-weight: bold;')
+                      form#routeForm(action='/create-itineraire', method='post', style='margin-top: 20px;')
+                      div.form-group(style="display:none")
+                          label(for='startPoint') Point de départ:
+                          div.col-6.offset-3
+                              input#startPoint.form-control(type='text', name='startPoint', placeholder='Entrez le point de départ', required)
+                      div.form-group(style="display:none")
+                          label(for='endPoint') Point d'arrivée:
+                          div.col-6.offset-3
+                              input#endPoint.form-control(type='text', name='endPoint', placeholder='Entrez le point d\'arrivée', required)
+                      div.form-group(style="display:none")
+                          label(for='instructions') Instructions :
+                          div.col-6.offset-3
+                              input#instructions.form-control(type='text', name='instructions')   
+                      div.col   
+                          table#instructionsList.table.table-bordered.table-responsive.mt-1       
+
+          script(type="text/javascript").
+              var itineraire = !{itineraire}
+              var startPointInput = document.getElementById('startPoint');
+              var endPointInput = document.getElementById('endPoint');
+              var instructions = document.getElementById('instructions');
+              var instructionsTable = document.getElementById('instructionsList');
+              var nameItineraireElement = document.getElementById('NameItineraire');
+              nameItineraireElement.innerText = 'Itinéraire ' + itineraire.id;
+              var markers = [];
+
+              // MAJ des champs caché 
+              startPointInput.value = itineraire.startPoint;
+              endPointInput.value = itineraire.endPoint;
+              instructions.value = itineraire.instructions;
+              
+              iconRed = `data:image/png;base64,!{base64Red}`;
+              var redIcon = L.icon({
+              iconUrl: iconRed,
+              iconSize: [25, 25], // Taille de l'icône
+              iconAnchor: [10, 10], // Point d'ancrage de l'icône par rapport à sa position
+              popupAnchor: [0, -32], // Point d'ancrage du popup par rapport à l'icône
+              });
+
+              iconOrange = `data:image/png;base64,!{base64Orange}`;
+              var orangeIcon = L.icon({
+              iconUrl: iconOrange,
+              iconSize: [25, 25], // Taille de l'icône
+              iconAnchor: [10, 10], // Point d'ancrage de l'icône par rapport à sa position
+              popupAnchor: [0, -32], // Point d'ancrage du popup par rapport à l'icône
+              });
+
+              iconBlue = `data:image/png;base64,!{base64Blue}`;
+              var blueIcon = L.icon({
+              iconUrl: iconBlue,
+              iconSize: [25, 25],
+              iconAnchor: [10, 10],
+              popupAnchor: [0, -32],
+              });
+
+              // JavaScript pour initialiser la carte Leaflet
+              var map = L.map("map", {
+              center: [48.8566, 2.3522],
+              zoom: 15,
+              });
+
+              L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+              attribution: "© OpenStreetMap contributors",
+              }).addTo(map);
+
+    
+              let [latitude, longitude] = itineraire.startPoint.split(',');
+
+              // Créer un objet avec les propriétés lat et lng
+              let coordinatesDepart = {
+                  lat: parseFloat(latitude.trim()), // Trim pour supprimer les espaces potentiels
+                  lng: parseFloat(longitude.trim()),
+              };
+
+              [latitude, longitude] = itineraire.endPoint.split(',');
+
+              // Créer un objet avec les propriétés lat et lng
+              let coordinatesArrive = {
+                  lat: parseFloat(latitude.trim()), // Trim pour supprimer les espaces potentiels
+                  lng: parseFloat(longitude.trim()),
+              };
+
+              // Créer un tableau de points pour les deux marqueurs
+              let latLngs = [coordinatesDepart, coordinatesArrive];
+
+              // Ajuster la vue de la carte pour inclure tous les points
+              map.fitBounds(latLngs);
+
+              // Ajouter une marge autour des points pour une meilleure apparence
+              map.fitBounds(latLngs, { padding: [100, 100] });
+              
+              //Ajout du départ
+              var marker = L.marker(coordinatesDepart,{draggable:false})
+              marker.bindPopup('<br>Depart Latitude: ' + coordinatesDepart.lat.toFixed(6) + ', Longitude: ' + coordinatesDepart.lng.toFixed(6)).openPopup();
+              marker.addTo(map);
+              markers.push(marker);
+
+              //Ajout arrivée 
+              var marker1 = L.marker(coordinatesArrive,{draggable:false});
+              marker1.bindPopup('<br>Arrivée Latitude: ' + coordinatesArrive.lat.toFixed(6) + ', Longitude: ' + coordinatesArrive.lng.toFixed(6)).openPopup();
+              marker1.addTo(map);
+              markers.push(marker1);
+        
+script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js", integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+", crossorigin="anonymous" async)
+script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js", integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL", crossorigin="anonymous" async) 

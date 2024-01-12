@@ -55,6 +55,9 @@ block content
   script.
     $(document).ready(function() {
         $('#itineraireTable').DataTable({
+          
+            "bLengthChange": false,
+            pageLength : 5,
             language: {
                 url: 'https://cdn.datatables.net/plug-ins/1.10.24/i18n/French.json'
             }

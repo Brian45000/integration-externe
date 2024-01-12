@@ -1,11 +1,15 @@
 const express = require("express");
 const app = express();
 const axios = require("axios");
-const puppeteer = require("puppeteer");
 const bodyParser = require("body-parser");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
-const cookieParser = require("cookie-parser");
+const puppeteer = require("puppeteer");
+const pug = require("pug");
+
+app.set("view engine", "pug");
+app.set("views", "pug");
+
 app.use(
   bodyParser.urlencoded({
     extended: true,
@@ -15,11 +19,98 @@ app.use(
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-app.post("/itinerary", async (req, res) => {
-  //Récupérer un ID
-  // id = req.body.id;
-  //jeton = req.body.jeton;
+app.post("/itineraryPuppeteer", async (req, res) => {
+  try {
+    const id_itineraire = req.body.itineraireId;
+    const start_point = req.body.startPoint;
+    const end_point = req.body.endPoint;
+    const instructions = req.body.instructions;
 
+    // Revoir pour créer une fonction
+    fs.readFile("public/images/bicycle-red.png", (err, data) => {
+      if (err) {
+      }
+      // Convertir le buffer en base64
+      const base64Image = Buffer.from(data).toString("base64");
+      // Envoyer la réponse avec l'image en base64
+      base64Red = base64Image;
+    });
+
+    fs.readFile("public/images/bicycle-orange.png", (err, data) => {
+      if (err) {
+      }
+      // Convertir le buffer en base64
+      const base64Image = Buffer.from(data).toString("base64");
+      // Envoyer la réponse avec l'image en base64
+      base64Orange = base64Image;
+    });
+
+    fs.readFile("public/images/bicycle-blue.png", (err, data) => {
+      if (err) {
+      }
+      // Convertir le buffer en base64
+      const base64Image = Buffer.from(data).toString("base64");
+      // Envoyer la réponse avec l'image en base64
+      base64Blue = base64Image;
+    });
+
+    const [responseStations, responseStatus] = await Promise.all([
+      axios.get(
+        "https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_information.json"
+      ),
+      axios.get(
+        "https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_status.json"
+      ),
+    ]);
+
+    const dataStations = responseStations.data.data.stations;
+    const dataStationStatus = responseStatus.data.data.stations;
+
+    const itineraire = {
+      id: id_itineraire,
+      startPoint: start_point,
+      endPoint: end_point,
+      instructions: instructions,
+    };
+
+    // Compilez le fichier Pug avec les paramètres
+    let htmlContent = pug.renderFile("pug/basecopy.pug", {
+      dataStations: JSON.stringify(dataStations),
+      dataStationStatus: JSON.stringify(dataStationStatus),
+      itineraire: JSON.stringify(itineraire),
+      base64Red: base64Red,
+      base64Orange: base64Orange,
+      base64Blue: base64Blue,
+    });
+
+    fs.writeFileSync("./public/files/test.html", htmlContent);
+    const doc = new PDFDocument();
+
+    // Utilisez Puppeteer pour générer un PDF à partir du contenu HTML
+    const browser = await puppeteer.launch({ headless: false });
+    const page = await browser.newPage();
+
+    await page.setContent(htmlContent, {
+      waitUntil: "networkidle0",
+      timeout: 0,
+    });
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+    });
+    // await browser.close();
+    const pdfPath = `public/pdf/itinerary_${id_itineraire}.pdf`;
+    fs.writeFileSync(pdfPath, pdfBuffer);
+    console.log(`Le PDF a été enregistré avec succès à ${pdfPath}`);
+
+    // Enregistrez le PDF dans le répertoire /public/pdf/
+  } catch (error) {
+    console.error("Erreur lors de la génération du PDF :", error);
+  }
+});
+
+// Première ébauche de génération PDF
+app.post("/itinerary", async (req, res) => {
   const id_itineraire = req.body.itineraireId;
   const start_point = req.body.startPoint;
   const end_point = req.body.endPoint;
@@ -30,9 +121,12 @@ app.post("/itinerary", async (req, res) => {
 
   doc.pipe(fs.createWriteStream(`public/pdf/itinerary_${id_itineraire}.pdf`));
 
-  doc.fontSize(12).text(`ID Itinéraire: ${id_itineraire}`);
-  doc.fontSize(12).text(`Point de départ: ${start_point}`);
-  doc.fontSize(12).text(`Point d'arrivée: ${end_point}`);
+  doc.fontSize(12).fillColor("red").text(`ID Itinéraire: ${id_itineraire}`, {
+    width: 410,
+    align: "center",
+  });
+  doc.fontSize(12).fillColor("black").text(`Point de départ : ${start_point}`);
+  doc.fontSize(12).text(`Point d'arrivée : ${end_point}`);
   let array_instruction = JSON.parse(instructions);
 
   array_instruction.forEach((instru) => {
@@ -45,7 +139,6 @@ app.post("/itinerary", async (req, res) => {
         )} mètre(s)`
       );
   });
-  //doc.fontSize(12).text(`Instructions: ${instructions}`);
 
   const pdfBuffer = [];
   doc.on("data", (chunk) => pdfBuffer.push(chunk));
@@ -108,6 +201,6 @@ app.get("/itinerary/:id", async (req, res) => {
     });
 });
 
-app.listen(6000, () => {
-  console.log("Listening on 6000");
+app.listen(7000, () => {
+  console.log("Listening on 7000");
 });

@@ -48,7 +48,7 @@ app.post("/login", async (req, res) => {
         identifiant: resPost.data.identifiant,
         JWT: resPost.data.JWT,
       });
-      res.redirect(resPost.data.redirect);
+      return res.redirect(resPost.data.redirect);
     });
 });
 
@@ -63,7 +63,7 @@ app.get("/logout", async (req, res) => {
     })
     .then((resGet) => {
       res.clearCookie("cookies");
-      res.redirect(resGet.data.redirect);
+      return res.redirect(resGet.data.redirect);
     });
 });
 
@@ -92,7 +92,7 @@ app.post("/register", async (req, res) => {
       }
     )
     .then((resPost) => {
-      res.redirect(resPost.data.redirect);
+      return res.redirect(resPost.data.redirect);
     });
 });
 
@@ -122,7 +122,7 @@ app.all("*", async (req, res, next) => {
       });
   }
   if (!estConnecte) {
-    res.redirect("/login");
+    return res.redirect("/login");
   }
   res.locals.estConnecte = estConnecte;
   res.locals.id_user = id_user;
@@ -155,7 +155,7 @@ app.get("/dashboard", async (req, res) => {
         distance: itineraire.distance / 1000,
         endPoint: itineraire.endPoint,
       }));
-
+      connection.end();
       res.render("itineraires", { routes: routes });
     }
   );
@@ -197,7 +197,7 @@ app.post("/update/:userID", async (req, res) => {
         identifiant: resPatch.data.identifiant,
         JWT: resPatch.data.JWT,
       });
-      res.redirect(resPatch.data.redirect);
+      return res.redirect(resPatch.data.redirect);
     });
 });
 /************************************** MAP ***************************************************/
@@ -274,27 +274,23 @@ app.post("/creation-itineraire", async (req, res) => {
         console.log(err);
       } else {
         // Envoi la demande pour générer le pdf
-        await axios
-          .post(
-            "http://localhost:6000/itinerary/",
-            {
-              itineraireId: results.insertId,
-              startPoint: startPoint,
-              distance: distance,
-              endPoint: endPoint,
-              instructions: instructions,
+        axios.post(
+          "http://localhost:7000/itineraryPuppeteer/",
+          {
+            itineraireId: results.insertId,
+            startPoint: startPoint,
+            distance: distance,
+            endPoint: endPoint,
+            instructions: instructions,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
             },
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          )
-          .then((res) => {
-            res.end();
-          });
+          }
+        );
         connection.end();
-        res.redirect("/dashboard");
+        return res.redirect("/dashboard");
       }
     }
   );
@@ -320,7 +316,7 @@ app.get("/delete-itineraire/:id", (req, res) => {
       }
       connection.end();
       console.log(`Itinéraire avec l'ID ${idItineraire} supprimé avec succès.`);
-      res.redirect("/dashboard");
+      return res.redirect("/dashboard");
     }
   );
 });
@@ -387,9 +383,9 @@ app.get("/itinerary/:id", async (req, res) => {
     const id = req.params.id;
     const cookie = req.cookies.cookies.JWT;
 
-    // Appel à la route localhost:6000/itinerary/:id pour récupérer les données binaires du PDF
+    // Appel à la route localhost:7000/itinerary/:id pour récupérer les données binaires du PDF
     const response = await axios.get(
-      `http://127.0.0.1:6000/itinerary/${id}?cookie=${cookie}`,
+      `http://127.0.0.1:7000/itinerary/${id}?cookie=${cookie}`,
       { responseType: "arraybuffer" }
     );
 
@@ -440,7 +436,7 @@ app.post("/changePassword/:userID", async (req, res) => {
       }
     )
     .then((resPatch) => {
-      res.redirect(resPatch.data.redirect);
+      return res.redirect(resPatch.data.redirect);
     });
 });
 
